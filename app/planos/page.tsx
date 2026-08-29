@@ -4,6 +4,9 @@ import { Pagina, Icone } from '../componentes.tsx';
 import SeletorPeriodo from './SeletorPeriodo.tsx';
 import { economia } from '../../lib/precos.ts';
 import { tabelaVigente } from '../../lib/precos-consultas.ts';
+import { listarMateriasEmCache } from '../../lib/catalogo.ts';
+import { alunoAtual, licencasDo } from '../../lib/sessao.ts';
+import { acaoComprar, acaoAtivarTrial } from '../acoes-comerciais.ts';
 
 export const metadata: Metadata = {
   title: 'Planos e licenças',
@@ -13,7 +16,14 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function Planos() {
-  const tabela = await tabelaVigente();
+  const [tabela, materias, aluno] = await Promise.all([
+    tabelaVigente(), listarMateriasEmCache(), alunoAtual(),
+  ]);
+  const publicadas = materias
+    .filter((m) => m.status === 'publicado' && m.aulasPublicadas > 0)
+    .map((m) => ({ id: m.id, nome: m.nome }));
+  const licencas = aluno ? await licencasDo(aluno.id) : [];
+  const temTrial = licencas.some((l) => l.origem === 'TRIAL');
   return (
     <Pagina ativo="planos">
       <section className="cabeca-materia">
@@ -29,7 +39,15 @@ export default async function Planos() {
 
       <section className="secao" style={{ paddingTop: '2.5rem' }}>
         <div className="container">
-          <SeletorPeriodo tabela={tabela} economiaAnual={economia(tabela, 'CATALOGO', 'anual')} />
+          <SeletorPeriodo
+            tabela={tabela}
+            economiaAnual={economia(tabela, 'CATALOGO', 'anual')}
+            materias={publicadas}
+            logado={Boolean(aluno)}
+            temTrial={temTrial}
+            acaoComprar={acaoComprar}
+            acaoTrial={acaoAtivarTrial}
+          />
           <p style={{ textAlign: 'center', fontSize: '.85rem', color: 'var(--ink-soft)', marginTop: '1.4rem' }}>
             Preços de referência — hipótese a validar antes do lançamento.
           </p>

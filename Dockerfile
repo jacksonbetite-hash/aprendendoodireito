@@ -33,7 +33,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh && chown -R nextjs:nodejs /app
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
-  CMD wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/api/saude >/dev/null || exit 1
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]

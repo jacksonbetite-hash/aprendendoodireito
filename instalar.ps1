@@ -41,7 +41,14 @@ if ($emUso) {
 }
 
 Passo 'Construindo a imagem (a primeira vez leva alguns minutos)'
-docker compose build
+# Em rede que inspeciona TLS (corporativa), aponte a CA antes de rodar:
+#   $env:CA_BUNDLE = 'C:\caminho\ca.crt'
+if ($env:CA_BUNDLE) {
+  Ok "usando CA extra: $env:CA_BUNDLE"
+  docker build --secret "id=ca_bundle,src=$env:CA_BUNDLE" -t aprendendoodireito:latest .
+} else {
+  docker compose build
+}
 if ($LASTEXITCODE -ne 0) { throw 'A construcao da imagem falhou.' }
 Ok 'Imagem pronta.'
 

@@ -48,9 +48,9 @@ docker compose up -d db                 # só o Postgres (publicado em 127.0.0.1
 export DATABASE_URL=postgres://aprendendo:aprendendo@localhost:5432/aprendendoodireito
 npm install && npm run migrate && npm run dev
 
-npm test          # 42 testes: licenças, senha e preços
+npm test          # 54 testes: licenças, senha, preços e checkout
 npm run contraste # 16 pares de cor contra o WCAG AA
-SENHA_ADMIN=... npm run e2e   # 38 verificações no navegador, com a app de pé
+SENHA_ADMIN=... npm run e2e   # 58 verificações no navegador, com a app de pé
 ```
 
 O seed traz uma conta de exemplo (`ana@exemplo.com` / `constitucional88`) com
@@ -68,13 +68,21 @@ trial e licença promocional ativos, para o fluxo do aluno ser navegável na hor
 | **Exercícios §5.5** | Correção imediata com comentário em todas as alternativas; respostas gravadas alimentam estatística e caderno de erros |
 | **Área do aluno §5.2** | Continue de onde parou, progresso por matéria, licenças com escopo e origem, caderno de erros |
 | **Identidade visual §9** | Design system "Direito Leve" (terracota, teal e mostarda; Montserrat + Quicksand) aplicado a todas as telas, conforme o material entregue. Ver [`docs/identidade-visual.md`](docs/identidade-visual.md) |
+| **Checkout §8** | Pedido → cobrança → webhook → licença, tudo em transação. Pix e cartão; Pix avulso não renova e cartão cria assinatura (§6.4). **Webhook idempotente** (§8.3): o mesmo evento chegando duas vezes nunca emite duas licenças, com assinatura HMAC conferida antes de qualquer coisa |
+| **Teste e cancelamento §6.1 e §6.6** | O aluno ativa os 7 dias sozinho (um por conta), cancela em 2 cliques com protocolo e pede reembolso integral dentro dos 7 dias do CDC |
 | **Preços §7 e §5.9** | Tabela **no banco, com vigência e histórico**: o preço novo vale a partir da data escolhida e não afeta licença vigente. Telas de planos, catálogo e matéria leem a mesma fonte |
 | **Autenticação §10** | E-mail e senha com scrypt, sessão revogável (o banco guarda só o hash do token), cookie httpOnly + SameSite. Papéis `aluno`/`admin` |
 | **Administração §5.9** | Visão geral, tabela de valores com histórico, concessão e extensão de licenças, busca de alunos — tudo **auditado** (quem, o quê, quando) na mesma transação da alteração |
 
 ### O que ainda não está
 
-Checkout e gateway (§8), painel do professor e fechamento de contas (§5.6),
+**Gateway real.** O provedor de pagamento é um adaptador (`lib/pagamento.ts`)
+com implementação `simulado`, que roda sem credencial e **não cobra nada** — é
+o que permite instalar e testar a compra inteira na sua máquina. Ligar Asaas ou
+Pagar.me (§8.2) é escrever um módulo que implemente `Provedor`; nenhuma tela
+muda. Pix Automático depende dessa escolha.
+
+Também faltam: painel do professor e fechamento de contas (§5.6),
 publicidade (§5.7), mural de vagas (§5.7.1), diagnóstico e plano de ensino
 (§5.8), hospedagem real de vídeo (§10). O player é um placeholder que já
 carrega a marca d'água com os dados do aluno.
@@ -97,9 +105,14 @@ conciliação) depende do gateway e vem junto com ele.
 │   ├── planos/ · painel/     # licenças e área do aluno
 │   └── api/resposta/         # grava resposta de exercício
 │   ├── entrar/ · cadastrar/  # autenticação
+│   ├── checkout/ · conta/    # compra, assinatura, cancelamento e reembolso
+│   ├── api/webhook/          # confirmação de pagamento (idempotente)
+│   ├── api/saude/            # usado pelo healthcheck do container
 │   └── admin/                # administração (§5.9)
 ├── lib/
 │   ├── licenca.ts            # motor de licenciamento (§6.3)
+│   ├── checkout.ts           # pedido, pagamento, assinatura, reembolso
+│   ├── pagamento.ts          # adaptador de gateway (simulado + contrato)
 │   ├── auth.ts               # senha, sessão e papéis
 │   ├── admin.ts              # operações administrativas, todas auditadas
 │   ├── precos.ts             # parte pura (vai ao navegador)
@@ -144,8 +157,8 @@ conciliação) depende do gateway e vem junto com ele.
 
 Do §16 (decisões pendentes) e do §14 (roadmap):
 
-1. **Checkout com Pix e cartão** (§8) — é o que falta para a operação faturar.
-   Escolher o gateway pelo critério de split e Pix Automático (§8.2)
+1. **Escolher o gateway** (§8.2) e implementar o `Provedor` correspondente —
+   o critério é split de pagamento e Pix Automático, não a taxa
 2. **2FA para admin e professor** (§10), antes de o admin sair do ambiente local
 3. Fechar a **ordem das ondas** — o seed adota a sugestão do §16.1, a confirmar
 4. Ingestão do acervo completo do vade-mécum via LexML, com rotina de atualização

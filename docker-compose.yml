@@ -1,3 +1,9 @@
+# Sobe o sistema inteiro: banco, migrações e aplicação.
+#   docker compose up -d --build
+#
+# Configuração fica em .env (veja .env.example). Sem .env, os padrões
+# abaixo valem e servem para instalação local.
+
 services:
   db:
     image: postgres:16-alpine
@@ -5,18 +11,24 @@ services:
       POSTGRES_USER: aprendendo
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aprendendo}
       POSTGRES_DB: aprendendoodireito
+      # pt_BR no ordenamento e busca textual
+      LANG: pt_BR.UTF-8
     volumes:
       - dados-postgres:/var/lib/postgresql/data
     ports:
-      # Publicado para o fluxo de desenvolvimento do README (npm run dev
-      # contra o banco do compose). Em produção, remova este mapeamento.
+      # Só no localhost: o banco não fica exposto à rede. Serve ao fluxo
+      # de desenvolvimento do README; em produção, remova o mapeamento.
       - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aprendendo -d aprendendoodireito"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 12
+      start_period: 10s
     restart: unless-stopped
+    # Postgres usa memória compartilhada; o padrão de 64MB do Docker
+    # aperta em consultas com ordenação.
+    shm_size: 256mb
 
   web:
     build: .
@@ -24,12 +36,21 @@ services:
     environment:
       DATABASE_URL: postgres://aprendendo:${POSTGRES_PASSWORD:-aprendendo}@db:5432/aprendendoodireito
       NODE_ENV: production
+      PROVEDOR_PAGAMENTO: ${PROVEDOR_PAGAMENTO:-simulado}
+      WEBHOOK_SEGREDO: ${WEBHOOK_SEGREDO:-segredo-de-desenvolvimento}
+      ALUNO_DEMO: ${ALUNO_DEMO:-}
     ports:
-      - "3000:3000"
+      - "${PORTA_WEB:-3000}:3000"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/saude"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
 
 volumes:
   dados-postgres:

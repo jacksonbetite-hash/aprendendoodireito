@@ -18,7 +18,7 @@ const DATA = (d: Date) => new Date(d).toLocaleDateString('pt-BR');
 const CORES = ['var(--tertiary-container)', 'var(--secondary)', 'var(--primary)'];
 
 export default async function Painel(
-  { searchParams }: { searchParams: Promise<{ 'sem-acesso'?: string; bemvindo?: string }> },
+  { searchParams }: { searchParams: Promise<{ 'sem-acesso'?: string; bemvindo?: string; trial?: string }> },
 ) {
   const busca = await searchParams;
   const aluno = await alunoAtual();
@@ -51,6 +51,7 @@ export default async function Painel(
         <Link className="item-lateral" href="/catalogo"><Icone nome="menu_book" /> Catálogo</Link>
         <Link className="item-lateral" href="/vademecum"><Icone nome="gavel" /> Vade-mécum</Link>
         <Link className="item-lateral" href="/planos"><Icone nome="loyalty" /> Planos</Link>
+        <Link className="item-lateral" href="/conta"><Icone nome="payments" /> Minha conta</Link>
         {aluno.papel === 'admin' && (
           <Link className="item-lateral" href="/admin"><Icone nome="settings" /> Administração</Link>
         )}
@@ -73,6 +74,13 @@ export default async function Painel(
           {busca['sem-acesso'] && (
             <p className="alerta alerta-erro" role="alert">
               <Icone nome="lock" tamanho={20} /> Sua conta não tem acesso à administração.
+            </p>
+          )}
+          {busca.trial && (
+            <p className="alerta alerta-ok" role="status">
+              <Icone nome="celebration" tamanho={20} />
+              Teste de 7 dias ativado! Você já pode estudar — o progresso e as anotações
+              ficam guardados mesmo depois que ele terminar.
             </p>
           )}
           {busca.bemvindo && (
@@ -223,19 +231,14 @@ export default async function Painel(
             </p>
           </div>
 
-          <div className="cartao">
-            <h2 className="headline-md" style={{ marginBottom: 16 }}>Minha conta</h2>
-            {[
-              ['Meio de pagamento: nenhum cadastrado', 'Adicionar Pix ou cartão'],
-              ['Cancelamento de assinatura — 2 cliques, com protocolo', 'Cancelar assinatura'],
-              ['Seus dados (LGPD): acessar, corrigir, exportar ou excluir', 'Abrir meus dados'],
-            ].map(([texto, acao]) => (
-              <div key={acao} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--surface-container)', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 15 }}>{texto}</span>
-                <span className="btn btn-contorno btn-sm">{acao}</span>
-              </div>
-            ))}
-          </div>
+          <Link className="atalho" href="/conta">
+            <span className="selo selo-neutra"><Icone nome="payments" /></span>
+            <span className="texto">
+              <strong>Minha conta</strong>
+              <span>Assinaturas, pedidos, reembolso e seus dados</span>
+            </span>
+            <Icone nome="chevron_right" tamanho={22} />
+          </Link>
         </div>
       </div>
     </div>

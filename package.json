@@ -10,7 +10,8 @@
     "seed": "node scripts/migrate.mjs --seed",
     "test": "node --test lib/*.test.ts",
     "contraste": "node scripts/contraste.mjs",
-    "e2e": "node testes-e2e/autenticacao.mjs && node testes-e2e/administracao.mjs"
+    "e2e": "node testes-e2e/autenticacao.mjs && node testes-e2e/comercial.mjs && node testes-e2e/administracao.mjs",
+    "confirmar-pagamento": "node scripts/confirmar-pagamento.mjs"
   },
   "dependencies": {
     "next": "^16.3.3",

@@ -860,6 +860,13 @@ select:focus-visible, textarea:focus-visible {
   .topo-acoes .link-entrar { display: none; }
   .topo-acoes .btn { padding: 10px 14px; font-size: 13px; }
 
+  /* O alternador de período rola na horizontal em vez de estourar */
+  .alternador {
+    display: flex; width: 100%; overflow-x: auto; border-radius: var(--r-md);
+    -webkit-overflow-scrolling: touch;
+  }
+  .alternador button { white-space: nowrap; flex-shrink: 0; padding: 10px 14px; font-size: 13px; }
+
   /* A busca do hero quebra em duas linhas em vez de estourar a largura */
   .busca-hero { flex-wrap: wrap; border-radius: var(--r-lg); padding: 12px; gap: 10px; }
   .busca-hero input { min-width: 0; flex-basis: 70%; }

@@ -13,7 +13,14 @@ docker version --format '{{.Server.Version}}' >/dev/null 2>&1 || {
 }
 
 passo 'Construindo a imagem (a primeira vez leva alguns minutos)'
-docker compose build
+# Em rede que inspeciona TLS (corporativa), aponte a CA:
+#   CA_BUNDLE=/caminho/ca.crt ./instalar.sh
+if [ -n "${CA_BUNDLE:-}" ]; then
+  echo "    usando CA extra: $CA_BUNDLE"
+  docker build --secret "id=ca_bundle,src=$CA_BUNDLE" -t aprendendoodireito:latest .
+else
+  docker compose build
+fi
 
 passo 'Subindo banco e aplicação'
 docker compose up -d

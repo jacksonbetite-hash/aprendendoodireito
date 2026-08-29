@@ -1,0 +1,313 @@
+import { pool, query, queryOne } from './db.ts';
+import {
+  provedorAtual, novaReferencia, novoProtocolo, MESES_DO_PERIODO,
+  type MeioPagamento, type EventoPagamento,
+} from './pagamento.ts';
+import type { Periodo, Produto } from './precos.ts';
+
+/**
+ * Checkout — §8 do discovery.
+ *
+ * Tudo o que cria licença passa por transação: ou o pedido vira pago,
+ * a assinatura nasce e a licença é emitida juntos, ou nada acontece.
+ * Pedido pago pela metade é o pior estado possível num sistema de
+ * assinatura — o aluno paga e não estuda.
+ */
+
+async function emTransacao<T>(fn: (exec: typeof query) => Promise<T>): Promise<T> {
+  const cliente = await pool.connect();
+  const exec = (async (sql: string, params: unknown[] = []) =>
+    (await cliente.query(sql, params)).rows) as typeof query;
+  try {
+    await cliente.query('BEGIN');
+    const r = await fn(exec);
+    await cliente.query('COMMIT');
+    return r;
+  } catch (err) {
+    await cliente.query('ROLLBACK');
+    throw err;
+  } finally {
+    cliente.release();
+  }
+}
+
+function auditar(exec: typeof query, ator: string, acao: string, entidade: string,
+                 id: number | null, detalhe: unknown) {
+  return exec(
+    `INSERT INTO log_auditoria (ator, acao, entidade, entidade_id, detalhe)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [ator, acao, entidade, id, JSON.stringify(detalhe)],
+  );
+}
+
+export interface PedidoCriado {
+  id: number; referencia: string; centavos: number;
+  copiaECola?: string; instrucao: string; expiraEm: Date; meio: MeioPagamento;
+}
+
+/** Abre um pedido e cria a cobrança no gateway. */
+export async function abrirPedido(
+  usuarioId: number, email: string, produto: Produto, periodo: Periodo,
+  materiaId: number | null, meio: MeioPagamento,
+): Promise<PedidoCriado> {
+  if (produto === 'MATERIA' && materiaId === null) throw new Error('escolha a matéria');
+  if (produto === 'CATALOGO') materiaId = null;
+
+  const preco = await queryOne<{ centavos: number }>(
+    `SELECT centavos FROM preco
+      WHERE produto = $1 AND periodo = $2 AND vigente_ate IS NULL AND vigente_de <= current_date`,
+    [produto, periodo],
+  );
+  if (!preco) throw new Error('não há preço vigente para este produto');
+
+  const nomeMateria = materiaId
+    ? (await queryOne<{ nome: string }>('SELECT nome FROM materia WHERE id = $1', [materiaId]))?.nome
+    : null;
+  if (materiaId && !nomeMateria) throw new Error('matéria não encontrada');
+
+  const referencia = novaReferencia();
+  const provedor = provedorAtual();
+  const cobranca = await provedor.criarCobranca({
+    referencia, centavos: preco.centavos, meio, emailPagador: email,
+    descricao: nomeMateria ? `Licença — ${nomeMateria}` : 'Passe completo',
+  });
+
+  return emTransacao(async (exec) => {
+    const [p] = await exec<{ id: number }>(
+      `INSERT INTO pedido (referencia, usuario_id, escopo, materia_id, periodo,
+                           centavos, meio, expira_em)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+      [referencia, usuarioId, produto, materiaId, periodo, preco.centavos, meio, cobranca.expiraEm],
+    );
+    await exec(
+      `INSERT INTO pagamento (pedido_id, meio, centavos, detalhe)
+       VALUES ($1, $2, $3, $4)`,
+      [p.id, meio, preco.centavos,
+       JSON.stringify({ idExterno: cobranca.idExterno, provedor: provedor.nome })],
+    );
+    await auditar(exec, email, 'pedido.aberto', 'pedido', p.id,
+      { referencia, produto, periodo, materiaId, meio, centavos: preco.centavos });
+    return {
+      id: p.id, referencia, centavos: preco.centavos, meio,
+      copiaECola: cobranca.copiaECola, instrucao: cobranca.instrucao, expiraEm: cobranca.expiraEm,
+    };
+  });
+}
+
+export type ResultadoConfirmacao =
+  | { ok: true; licencaId: number; jaProcessado: false }
+  | { ok: true; licencaId: number | null; jaProcessado: true }
+  | { ok: false; motivo: string };
+
+/**
+ * Confirma o pagamento e emite a licença.
+ *
+ * IDEMPOTENTE (§8.3): "o mesmo evento pode chegar duas vezes — nunca
+ * liberar duas licenças". A guarda é dupla: o índice único em
+ * evento_gateway barra o evento repetido, e o UPDATE do pedido só
+ * avança se ele ainda estiver ABERTO.
+ */
+export async function confirmarPagamento(
+  evento: EventoPagamento, provedorNome: string, corpo: unknown,
+): Promise<ResultadoConfirmacao> {
+  return emTransacao(async (exec) => {
+    const [registrado] = await exec<{ id: number }>(
+      `INSERT INTO evento_gateway (provedor, evento_id, tipo, corpo)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (provedor, evento_id) DO NOTHING
+       RETURNING id`,
+      [provedorNome, evento.eventoId, evento.tipo, JSON.stringify(corpo)],
+    );
+    if (!registrado) {
+      // já vimos este evento: devolve sucesso sem emitir nada de novo
+      const anterior = await exec<{ licencaId: number | null }>(
+        `SELECT l.id AS "licencaId" FROM pedido p
+           LEFT JOIN licenca l ON l.pedido_id = p.id
+          WHERE p.referencia = $1`,
+        [evento.referencia],
+      );
+      return { ok: true as const, licencaId: anterior[0]?.licencaId ?? null, jaProcessado: true as const };
+    }
+
+    const [pedido] = await exec<{
+      id: number; usuarioId: number; escopo: 'CATALOGO' | 'MATERIA';
+      materiaId: number | null; periodo: Periodo; centavos: number; meio: MeioPagamento;
+    }>(
+      `SELECT id, usuario_id AS "usuarioId", escopo, materia_id AS "materiaId",
+              periodo, centavos, meio
+         FROM pedido WHERE referencia = $1 AND status = 'ABERTO'
+         FOR UPDATE`,
+      [evento.referencia],
+    );
+    if (!pedido) {
+      await exec(`UPDATE evento_gateway SET processado_em = now(), resultado = $2
+                   WHERE id = $1`, [registrado.id, 'pedido inexistente ou já finalizado']);
+      return { ok: false as const, motivo: 'pedido inexistente ou já finalizado' };
+    }
+
+    if (evento.tipo === 'pagamento.falhou') {
+      await exec(`UPDATE pedido SET status = 'CANCELADO' WHERE id = $1`, [pedido.id]);
+      await exec(`UPDATE evento_gateway SET processado_em = now(), resultado = 'pagamento falhou'
+                   WHERE id = $1`, [registrado.id]);
+      return { ok: false as const, motivo: 'pagamento não aprovado' };
+    }
+
+    // Assinatura: cartão e Pix Automático renovam sozinhos; Pix avulso não (§6.4)
+    let assinaturaId: number | null = null;
+    if (pedido.meio !== 'PIX') {
+      const [a] = await exec<{ id: number }>(
+        `INSERT INTO assinatura (usuario_id, escopo, materia_id, periodo, meio, proxima_cobranca)
+         VALUES ($1, $2, $3, $4, $5, (current_date + ($6 || ' months')::interval)::date)
+         RETURNING id`,
+        [pedido.usuarioId, pedido.escopo, pedido.materiaId, pedido.periodo, pedido.meio,
+         String(MESES_DO_PERIODO[pedido.periodo])],
+      );
+      assinaturaId = a.id;
+    }
+
+    const [licenca] = await exec<{ id: number }>(
+      `INSERT INTO licenca (usuario_id, escopo, materia_id, origem, status,
+                            inicio_em, fim_em, assinatura_id, pedido_id)
+       VALUES ($1, $2, $3, 'COMPRA', 'ATIVA', now(),
+               now() + ($4 || ' months')::interval, $5, $6)
+       RETURNING id`,
+      [pedido.usuarioId, pedido.escopo, pedido.materiaId,
+       String(MESES_DO_PERIODO[pedido.periodo]), assinaturaId, pedido.id],
+    );
+
+    await exec(
+      `UPDATE pedido SET status = 'PAGO', pago_em = now(), assinatura_id = $2
+        WHERE id = $1`,
+      [pedido.id, assinaturaId],
+    );
+    await exec(`UPDATE pagamento SET confirmado_em = now() WHERE pedido_id = $1`, [pedido.id]);
+    await exec(`UPDATE evento_gateway SET processado_em = now(), resultado = $2 WHERE id = $1`,
+      [registrado.id, `licença ${licenca.id} emitida`]);
+    await auditar(exec, `gateway:${provedorNome}`, 'pagamento.confirmado', 'pedido', pedido.id,
+      { referencia: evento.referencia, licencaId: licenca.id, assinaturaId });
+
+    return { ok: true as const, licencaId: licenca.id, jaProcessado: false as const };
+  });
+}
+
+/** Teste gratuito de 7 dias, ativado pelo próprio aluno (§6.1). */
+export async function ativarTrial(usuarioId: number, email: string, materiaId: number) {
+  return emTransacao(async (exec) => {
+    // Um teste por conta, não renovável e não acumulável. O índice único
+    // já garante; conferir antes deixa a mensagem melhor que um erro 500.
+    const [existente] = await exec<{ id: number }>(
+      `SELECT id FROM licenca WHERE usuario_id = $1 AND origem = 'TRIAL'`, [usuarioId],
+    );
+    if (existente) throw new Error('Você já usou seu teste gratuito. Ele é um por conta.');
+
+    const [m] = await exec<{ id: number }>(
+      `SELECT id FROM materia WHERE id = $1 AND status = 'publicado'`, [materiaId],
+    );
+    if (!m) throw new Error('Escolha uma matéria publicada.');
+
+    const [l] = await exec<{ id: number }>(
+      `INSERT INTO licenca (usuario_id, escopo, materia_id, origem, status,
+                            inicio_em, fim_em, cota)
+       VALUES ($1, 'MATERIA', $2, 'TRIAL', 'ATIVA', now(), now() + interval '7 days', $3)
+       RETURNING id`,
+      [usuarioId, materiaId, JSON.stringify({ aulas: 4, exercicios: 30 })],
+    );
+    await auditar(exec, email, 'trial.ativado', 'licenca', l.id, { materiaId });
+    return l.id;
+  });
+}
+
+/** Cancelamento em 2 cliques, com protocolo (§6.6). */
+export async function cancelarAssinatura(usuarioId: number, email: string, assinaturaId: number) {
+  return emTransacao(async (exec) => {
+    const protocolo = novoProtocolo('CANC');
+    const [a] = await exec<{ id: number }>(
+      `UPDATE assinatura
+          SET status = 'CANCELADA', cancelada_em = now(), protocolo_cancelamento = $3
+        WHERE id = $1 AND usuario_id = $2 AND status <> 'CANCELADA'
+        RETURNING id`,
+      [assinaturaId, usuarioId, protocolo],
+    );
+    if (!a) throw new Error('assinatura não encontrada ou já cancelada');
+    // O acesso continua até o fim do período já pago (§6.4) — a licença
+    // não é tocada, só deixa de renovar.
+    await auditar(exec, email, 'assinatura.cancelada', 'assinatura', assinaturaId, { protocolo });
+    return protocolo;
+  });
+}
+
+/** Arrependimento em 7 dias: devolução integral, sem justificativa (§6.6). */
+export async function pedirReembolso(usuarioId: number, email: string, pedidoId: number) {
+  return emTransacao(async (exec) => {
+    const [p] = await exec<{ id: number; centavos: number; licencaId: number | null; dias: number }>(
+      `SELECT p.id, p.centavos, l.id AS "licencaId",
+              EXTRACT(day FROM now() - p.pago_em)::int AS dias
+         FROM pedido p LEFT JOIN licenca l ON l.pedido_id = p.id
+        WHERE p.id = $1 AND p.usuario_id = $2 AND p.status = 'PAGO'`,
+      [pedidoId, usuarioId],
+    );
+    if (!p) throw new Error('pedido não encontrado');
+    if (p.dias > 7) {
+      throw new Error('O prazo de arrependimento é de 7 dias corridos a partir da compra (CDC, art. 49).');
+    }
+
+    const protocolo = novoProtocolo('REEMB');
+    await exec(
+      `INSERT INTO reembolso (pedido_id, centavos, motivo, protocolo, solicitado_por)
+       VALUES ($1, $2, 'arrependimento em 7 dias (CDC, art. 49)', $3, $4)`,
+      [p.id, p.centavos, protocolo, email],
+    );
+    await exec(`UPDATE pedido SET status = 'REEMBOLSADO' WHERE id = $1`, [p.id]);
+    if (p.licencaId) {
+      await exec(`UPDATE licenca SET status = 'CANCELADA', atualizada_em = now() WHERE id = $1`,
+        [p.licencaId]);
+    }
+    await exec(`UPDATE assinatura SET status = 'ENCERRADA'
+                 WHERE id = (SELECT assinatura_id FROM pedido WHERE id = $1)`, [p.id]);
+    await auditar(exec, email, 'reembolso.solicitado', 'pedido', p.id, { protocolo, centavos: p.centavos });
+    return protocolo;
+  });
+}
+
+export function pedidosDo(usuarioId: number) {
+  return query<{
+    id: number; referencia: string; centavos: number; status: string; meio: string;
+    periodo: string; materiaNome: string | null; escopo: string;
+    criadoEm: Date; pagoEm: Date | null; podeReembolsar: boolean;
+  }>(
+    `SELECT p.id, p.referencia, p.centavos, p.status, p.meio, p.periodo, p.escopo,
+            m.nome AS "materiaNome", p.criado_em AS "criadoEm", p.pago_em AS "pagoEm",
+            (p.status = 'PAGO' AND p.pago_em > now() - interval '7 days') AS "podeReembolsar"
+       FROM pedido p LEFT JOIN materia m ON m.id = p.materia_id
+      WHERE p.usuario_id = $1 ORDER BY p.criado_em DESC`,
+    [usuarioId],
+  );
+}
+
+export function assinaturasDo(usuarioId: number) {
+  return query<{
+    id: number; escopo: string; materiaNome: string | null; periodo: string;
+    meio: string; status: string; proximaCobranca: Date | null; protocolo: string | null;
+  }>(
+    `SELECT a.id, a.escopo, m.nome AS "materiaNome", a.periodo, a.meio, a.status,
+            a.proxima_cobranca AS "proximaCobranca", a.protocolo_cancelamento AS protocolo
+       FROM assinatura a LEFT JOIN materia m ON m.id = a.materia_id
+      WHERE a.usuario_id = $1 ORDER BY a.criada_em DESC`,
+    [usuarioId],
+  );
+}
+
+export function buscarPedidoPorReferencia(referencia: string, usuarioId: number) {
+  return queryOne<{
+    id: number; referencia: string; centavos: number; status: string; meio: MeioPagamento;
+    materiaNome: string | null; escopo: string; periodo: string; expiraEm: Date; detalhe: unknown;
+  }>(
+    `SELECT p.id, p.referencia, p.centavos, p.status, p.meio, p.escopo, p.periodo,
+            p.expira_em AS "expiraEm", m.nome AS "materiaNome", pg.detalhe
+       FROM pedido p
+       LEFT JOIN materia m ON m.id = p.materia_id
+       LEFT JOIN pagamento pg ON pg.pedido_id = p.id
+      WHERE p.referencia = $1 AND p.usuario_id = $2`,
+    [referencia, usuarioId],
+  );
+}

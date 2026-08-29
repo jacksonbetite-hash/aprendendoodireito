@@ -68,6 +68,41 @@ vez. Para criar outro depois:
 docker compose exec web node scripts/criar-admin.mjs voce@exemplo.com "Seu Nome"
 ```
 
+## Testar a compra sem gateway
+
+O sistema vem com um provedor de pagamento **simulado**: nada é cobrado, e o
+fluxo inteiro funciona. Na tela de planos, escolha a matéria e clique em
+assinar — abre o checkout com um código Pix de demonstração.
+
+Para simular a confirmação que o banco enviaria:
+
+```powershell
+docker compose exec web node scripts/confirmar-pagamento.mjs AD-20260829-A1B2C3
+```
+
+(a referência do pedido aparece na própria tela de checkout)
+
+A licença é emitida na hora e a aula abre. Para simular uma recusa, acrescente
+`--falhar`.
+
+Ao contratar Asaas ou Pagar.me, troque `PROVEDOR_PAGAMENTO` no `.env` e
+implemente o módulo correspondente — nenhuma tela muda.
+
+## Configuração
+
+Copie `.env.example` para `.env` para ajustar porta, senha do banco e o
+segredo do webhook:
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+docker compose up -d
+```
+
+**Antes de expor o sistema a qualquer rede**, troque `POSTGRES_PASSWORD` e
+`WEBHOOK_SEGREDO` — o segredo do webhook é o que impede alguém de emitir
+licença de graça.
+
 ## Comandos do dia a dia
 
 ```powershell
@@ -75,6 +110,7 @@ docker compose down          # parar (os dados ficam)
 docker compose down -v       # parar e apagar o banco
 docker compose up -d         # subir de novo
 docker compose logs -f web   # ver o que a aplicação está fazendo
+curl http://localhost:3000/api/saude   # conferir app + banco
 docker compose build; docker compose up -d   # aplicar mudanças no código
 ```
 
