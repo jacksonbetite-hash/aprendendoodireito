@@ -1,0 +1,8 @@
+services:
+  web:
+    build: .
+    image: aprendendoodireito:latest
+    container_name: aprendendoodireito
+    ports:
+      - "8080:80"
+    restart: unless-stopped

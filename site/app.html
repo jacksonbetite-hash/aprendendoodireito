@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Aluno — Aprendendo o Direito</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="app-body">
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="index.html"><span class="mark">§</span> Aprendendo <em>o Direito</em></a>
+    <div class="side-link active">🏠 Início</div>
+    <div class="side-link">🗺 Minhas trilhas</div>
+    <div class="side-link">✍ Questões</div>
+    <div class="side-link">📜 Jurisprudência</div>
+    <div class="side-link">🃏 Flashcards</div>
+    <div class="side-link">🎯 Simulados</div>
+    <div class="side-link" style="margin-top:auto">⚙ Configurações</div>
+  </aside>
+
+  <main class="app-main">
+    <h1>Bom dia, estudante! 👋</h1>
+    <p class="sub">Você está a 3 módulos de concluir a trilha de Direito Constitucional.</p>
+
+    <div class="stat-row">
+      <div class="stat"><strong>72%</strong><span>Trilha atual concluída</span></div>
+      <div class="stat"><strong>148</strong><span>Questões resolvidas este mês</span></div>
+      <div class="stat"><strong>12 dias</strong><span>Sequência de estudos 🔥</span></div>
+    </div>
+
+    <div class="panel">
+      <h2>Trilha — Direito Constitucional</h2>
+      <div class="trilha-item done">
+        <div class="dot">✓</div>
+        <div class="info">
+          <strong>Teoria da Constituição</strong>
+          <span>6 módulos · 42 questões</span>
+        </div>
+        <span class="pill ok">Concluído</span>
+      </div>
+      <div class="trilha-item done">
+        <div class="dot">✓</div>
+        <div class="info">
+          <strong>Princípios Fundamentais</strong>
+          <span>4 módulos · 38 questões</span>
+        </div>
+        <span class="pill ok">Concluído</span>
+      </div>
+      <div class="trilha-item current">
+        <div class="dot">3</div>
+        <div class="info">
+          <strong>Direitos e Garantias Fundamentais</strong>
+          <span>8 módulos · 64 questões · art. 5º ao 17 da CF/88</span>
+        </div>
+        <span class="pill now">Em andamento</span>
+      </div>
+      <div class="trilha-item">
+        <div class="dot">4</div>
+        <div class="info">
+          <strong>Organização do Estado</strong>
+          <span>7 módulos · 50 questões</span>
+        </div>
+        <span class="pill">Bloqueado</span>
+      </div>
+      <div class="trilha-item">
+        <div class="dot">5</div>
+        <div class="info">
+          <strong>Controle de Constitucionalidade</strong>
+          <span>9 módulos · 71 questões</span>
+        </div>
+        <span class="pill">Bloqueado</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>✍ Questão do dia — OAB · Direito Constitucional</h2>
+      <p style="font-size:0.95rem; margin-bottom:1rem">
+        Sobre os direitos e garantias fundamentais previstos na Constituição
+        Federal de 1988, assinale a alternativa <strong>correta</strong>:
+      </p>
+      <button class="q-option" data-correct="false">
+        A) Os direitos fundamentais podem ser abolidos por emenda constitucional aprovada por três quintos do Congresso Nacional.
+      </button>
+      <button class="q-option" data-correct="true">
+        B) Os direitos e garantias individuais constituem cláusulas pétreas e não podem ser objeto de emenda tendente a aboli-los.
+      </button>
+      <button class="q-option" data-correct="false">
+        C) As normas definidoras de direitos fundamentais dependem sempre de regulamentação legal para produzir efeitos.
+      </button>
+      <button class="q-option" data-correct="false">
+        D) Os tratados internacionais de direitos humanos sempre ingressam no ordenamento com status de emenda constitucional.
+      </button>
+      <p class="q-feedback" id="feedback"></p>
+    </div>
+  </main>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
