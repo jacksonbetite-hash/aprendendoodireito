@@ -105,7 +105,7 @@ export default async function Catalogo() {
               <h2>Vai estudar mais de uma matéria?</h2>
               <p>O passe completo libera todas as matérias publicadas — inclusive as lançadas durante a sua vigência.</p>
             </div>
-            <Link className="btn btn-coral btn-lg" href="/planos">Ver planos</Link>
+            <Link className="btn btn-accent btn-lg" href="/planos">Ver planos</Link>
           </div>
         </div>
       </section>

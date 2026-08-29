@@ -41,7 +41,7 @@ export default function Planos() {
           </div>
           <div className="grid-4">
             <div className="card">
-              <div className="icon mint">🔓</div>
+              <div className="icon success">🔓</div>
               <h3>Sem cadastro</h3>
               <p>Ementas de todas as matérias, <strong>vade-mécum completo</strong> e a 1ª aula de cada assunto.</p>
             </div>
@@ -51,12 +51,12 @@ export default function Planos() {
               <p>Uma matéria, ~20% das aulas, até 30 exercícios. Um por CPF, sem cartão, sem renovação automática.</p>
             </div>
             <div className="card">
-              <div className="icon sun">🎟️</div>
+              <div className="icon accent">🎟️</div>
               <h3>Licença promocional</h3>
               <p>Por código, parceria ou campanha: acesso <strong>total</strong> a uma matéria pelo período da promoção.</p>
             </div>
             <div className="card">
-              <div className="icon coral">🔑</div>
+              <div className="icon deep">🔑</div>
               <h3>Licença paga</h3>
               <p>Por matéria ou passe completo. As licenças somam: comprou o passe tendo uma matéria? As duas seguem valendo.</p>
             </div>
@@ -72,12 +72,12 @@ export default function Planos() {
           </div>
           <div className="grid-3">
             <div className="card">
-              <div className="icon mint">📲</div>
+              <div className="icon success">📲</div>
               <h3>Pix ou cartão</h3>
               <p>Pix por QR ou copia-e-cola libera o acesso em segundos. No cartão, a renovação é automática — e avisamos 3 dias antes de cada cobrança.</p>
             </div>
             <div className="card">
-              <div className="icon coral">↩️</div>
+              <div className="icon deep">↩️</div>
               <h3>7 dias para desistir</h3>
               <p>Comprou e não era o que esperava? Devolução integral em até 7 dias, sem justificativa, mesmo que já tenha assistido (CDC, art. 49).</p>
             </div>

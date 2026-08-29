@@ -96,7 +96,7 @@ if (lista) {
     bloco.className = 'questao';
     bloco.innerHTML =
       '<div class="qtag"><span class="pill">Questão ' + (i + 1) + ' de ' + QUESTOES.length +
-      '</span> <span class="pill coral">' + q.origem + '</span></div>' +
+      '</span> <span class="pill accent">' + q.origem + '</span></div>' +
       '<p class="enunciado">' + q.enunciado + '</p>';
 
     const comentario = document.createElement('div');

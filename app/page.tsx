@@ -71,17 +71,17 @@ export default async function Home() {
               <p>O vídeo da aula ministrada é o centro da página. Curto o bastante para caber no ônibus.</p>
             </div>
             <div className="card lift">
-              <div className="icon sun">📝</div>
+              <div className="icon accent">📝</div>
               <h3>Resumo em texto</h3>
               <p>Prefere ler? Todo vídeo tem resumo escrito, legendas e material de apoio em PDF.</p>
             </div>
             <div className="card lift">
-              <div className="icon mint">⚖️</div>
+              <div className="icon success">⚖️</div>
               <h3>A lei ao lado</h3>
               <p>Os artigos citados abrem num painel lateral, sem sair da aula. Favorite e anote.</p>
             </div>
             <div className="card lift">
-              <div className="icon coral">✅</div>
+              <div className="icon deep">✅</div>
               <h3>Exercício no final</h3>
               <p>No mínimo 5 questões, com comentário em <em>todas</em> as alternativas — inclusive nas erradas.</p>
             </div>
@@ -122,7 +122,7 @@ export default async function Home() {
         <div className="container">
           <div className="grid-2" style={{ alignItems: 'center', gap: '3rem' }}>
             <div>
-              <div className="kicker" style={{ color: 'var(--coral-500)', fontWeight: 800, letterSpacing: '.13em', textTransform: 'uppercase', fontSize: '.78rem', marginBottom: '.5rem' }}>
+              <div className="kicker" style={{ color: 'var(--accent-600)', fontWeight: 800, letterSpacing: '.13em', textTransform: 'uppercase', fontSize: '.78rem', marginBottom: '.5rem' }}>
                 O diferencial
               </div>
               <h2 style={{ fontSize: 'clamp(1.6rem,3vw,2.2rem)', lineHeight: 1.22, marginBottom: '.8rem' }}>
@@ -160,7 +160,7 @@ export default async function Home() {
               <h2>Teste 7 dias, sem cartão</h2>
               <p>Escolha uma matéria e estude de verdade antes de decidir. Se não continuar, seu progresso e suas anotações ficam guardados.</p>
             </div>
-            <Link className="btn btn-coral btn-lg" href="/planos">Quero testar</Link>
+            <Link className="btn btn-accent btn-lg" href="/planos">Quero testar</Link>
           </div>
         </div>
       </section>

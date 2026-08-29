@@ -47,7 +47,7 @@ export default function Exercicio({ questoes }: { questoes: Questao[] }) {
           <div className="questao" key={q.id}>
             <div className="qtag">
               <span className="pill">Questão {i + 1} de {questoes.length}</span>{' '}
-              <span className="pill coral">{q.origem}</span>
+              <span className="pill accent">{q.origem}</span>
             </div>
             <p className="enunciado">{q.enunciado}</p>
 

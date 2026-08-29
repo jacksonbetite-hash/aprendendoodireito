@@ -12,7 +12,7 @@ out="$1"; title="$2"; desc="$3"; body="$4"; bodyclass="${5:-}"
   echo "<meta name=\"description\" content=\"$desc\">"
   echo '<link rel="preconnect" href="https://fonts.googleapis.com">'
   echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-  echo '<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">'
+  echo '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">'
   echo '<link rel="stylesheet" href="css/styles.css">'
   echo '</head>'
   if [ -n "$bodyclass" ]; then echo "<body class=\"$bodyclass\">"; else echo '<body>'; fi

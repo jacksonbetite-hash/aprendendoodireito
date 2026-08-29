@@ -111,7 +111,7 @@ export default async function PaginaAula({ params }: { params: Promise<{ slug: s
           {!decisao.libera && (
             <div className="notice" style={{ marginBottom: '1.2rem' }}>
               🔒 {ofertaPara(decisao.motivo)}{' '}
-              <Link href="/planos" style={{ fontWeight: 800, color: 'var(--violet-600)' }}>Ver planos →</Link>
+              <Link href="/planos" style={{ fontWeight: 800, color: 'var(--brand-700)' }}>Ver planos →</Link>
             </div>
           )}
 

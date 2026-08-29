@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 const FONTES =
-  'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap';
+  'https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&display=swap';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

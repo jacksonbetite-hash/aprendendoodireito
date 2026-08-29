@@ -116,7 +116,7 @@ export default async function PaginaMateria({ params }: { params: Promise<{ slug
             <div style={{ fontSize: '.8rem', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-soft)', fontWeight: 800, marginBottom: '.5rem' }}>
               Licença desta matéria
             </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--violet-700)' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--brand-900)' }}>
               R$ 24,90<small style={{ fontSize: '.9rem', fontFamily: 'var(--font-body)', color: 'var(--ink-soft)', fontWeight: 600 }}>/mês</small>
             </div>
             <p style={{ fontSize: '.82rem', color: 'var(--ink-soft)', marginBottom: '1.1rem' }}>

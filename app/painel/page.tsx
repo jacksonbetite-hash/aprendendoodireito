@@ -75,7 +75,7 @@ export default async function Painel() {
                   {formatarDuracao(continuar.segundosAssistidos)} de {formatarDuracao(continuar.duracaoSegundos)} · {continuar.materiaNome}
                 </p>
               </div>
-              <span className="btn btn-coral">Retomar aula</span>
+              <span className="btn btn-accent">Retomar aula</span>
             </Link>
           )}
 

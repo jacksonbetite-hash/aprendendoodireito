@@ -76,7 +76,7 @@ export default async function VadeMecum(
               <>
                 <h2 className="lei-titulo">{atual.nome}</h2>
                 <p className="lei-sub">
-                  <span style={{ color: 'var(--mint-600)', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--success-700)', fontWeight: 700 }}>
                     ✔ texto conferido em {new Date(atual.conferidoEm).toLocaleDateString('pt-BR')}
                   </span>{' '}
                   · fonte: {atual.fonte}
@@ -105,7 +105,7 @@ export default async function VadeMecum(
                       {aulas.map((a, i) => (
                         <span key={a.slug}>
                           {i > 0 && ', '}
-                          <Link href={`/aula/${a.slug}`} style={{ color: 'var(--violet-600)', fontWeight: 700 }}>
+                          <Link href={`/aula/${a.slug}`} style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
                             {a.titulo}
                           </Link>
                         </span>
