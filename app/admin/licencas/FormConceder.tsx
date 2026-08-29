@@ -13,8 +13,8 @@ export default function FormConceder({
   const [estado, enviar, pendente] = useActionState(acao, {});
   return (
     <form action={enviar} className="form-linha">
-      {estado.erro && <p className="alerta-erro" role="alert">{estado.erro}</p>}
-      {estado.ok && <p className="alerta-ok" role="status">{estado.ok}</p>}
+      {estado.erro && <p className="alerta alerta-erro" role="alert">{estado.erro}</p>}
+      {estado.ok && <p className="alerta alerta-ok" role="status">{estado.ok}</p>}
       <div className="campos">
         <label>
           Aluno
@@ -36,7 +36,7 @@ export default function FormConceder({
           Dias
           <input name="dias" type="number" min={1} max={3650} defaultValue={30} required />
         </label>
-        <button className="btn btn-primary" type="submit" disabled={pendente}>
+        <button className="btn btn-primario" type="submit" disabled={pendente}>
           {pendente ? 'Concedendo…' : 'Conceder'}
         </button>
       </div>

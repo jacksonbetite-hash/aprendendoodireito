@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Icone } from '../../componentes.tsx';
 import { listarAlunos } from '../../../lib/admin.ts';
 
 export const metadata: Metadata = { title: 'Alunos — Administração' };
@@ -20,15 +21,15 @@ export default async function Alunos(
 
   return (
     <>
-      <h1>Alunos</h1>
-      <p className="sub">{alunos.length} {alunos.length === 1 ? 'conta' : 'contas'}{q && ` para “${q}”`}.</p>
+      <h1 className="headline-lg">Alunos</h1>
+      <p className="suave">{alunos.length} {alunos.length === 1 ? 'conta' : 'contas'}{q && ` para “${q}”`}.</p>
 
-      <form className="searchbar" style={{ maxWidth: '520px' }}>
-        <span>🔎</span>
+      <form className="busca-vade" style={{ maxWidth: '520px' }}>
+        <Icone nome="search" tamanho={22} />
         <input name="q" defaultValue={q} placeholder="Buscar por nome ou e-mail" aria-label="Buscar aluno" />
       </form>
 
-      <div className="panel">
+      <div className="cartao">
         <table className="tabela">
           <thead>
             <tr><th>Aluno</th><th>Conta</th><th>Licenças</th><th>Cadastro</th><th>Último acesso</th></tr>
@@ -40,16 +41,16 @@ export default async function Alunos(
                 <tr key={a.id}>
                   <td><strong>{a.nome}</strong><br /><span className="suave">{a.email}</span></td>
                   <td>
-                    <span className={`pill ${a.statusConta === 'ATIVA' ? 'free' : 'locked'}`}>
+                    <span className={`chip ${a.statusConta === 'ATIVA' ? 'chip-secundaria' : 'chip-neutra'}`}>
                       {a.statusConta.toLowerCase().replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td>{a.licencasAtivas > 0 ? `${a.licencasAtivas} vigente(s)` : <span className="suave">nenhuma</span>}</td>
-                  <td className="suave nowrap">{DATA(a.criadoEm)}</td>
-                  <td className="nowrap">
+                  <td className="suave apertado">{DATA(a.criadoEm)}</td>
+                  <td className="apertado">
                     {DATA(a.ultimoLoginEm)}
                     {inat.dias !== null && (
-                      <span className={inat.alerta ? 'pill soon' : 'suave'} style={{ marginLeft: '.4rem' }}>
+                      <span className={inat.alerta ? 'chip chip-terciaria' : 'suave'} style={{ marginLeft: '.4rem' }}>
                         {inat.dias}d
                       </span>
                     )}
@@ -58,7 +59,7 @@ export default async function Alunos(
               );
             })}
             {alunos.length === 0 && (
-              <tr><td colSpan={5}><div className="empty-state">Nenhum aluno encontrado.</div></td></tr>
+              <tr><td colSpan={5}><div className="vazio">Nenhum aluno encontrado.</div></td></tr>
             )}
           </tbody>
         </table>

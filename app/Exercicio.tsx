@@ -1,15 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import { Icone } from './ui.tsx';
 import type { Questao } from '../lib/exercicio.ts';
 
 /**
  * Exercício da aula (§5.3 e §5.5): correção imediata e comentário em
  * TODAS as alternativas — inclusive nas que o aluno não marcou.
- * A resposta é registrada no servidor para alimentar estatística e
- * caderno de erros; o feedback não espera essa ida e volta.
+ * O comentário vem no formato "Comentário da Professora" do design
+ * system, com o artigo citado ao alcance da mão.
  */
-export default function Exercicio({ questoes }: { questoes: Questao[] }) {
+export default function Exercicio(
+  { questoes, professor }: { questoes: Questao[]; professor?: string | null },
+) {
   const [respostas, setRespostas] = useState<Record<number, number>>({});
   const respondidas = Object.keys(respostas).length;
   const acertos = questoes.filter((q) =>
@@ -17,71 +20,98 @@ export default function Exercicio({ questoes }: { questoes: Questao[] }) {
   ).length;
 
   function responder(questaoId: number, alternativaId: number) {
-    if (respostas[questaoId]) return;             // uma tentativa por questão
+    if (respostas[questaoId]) return;                 // uma tentativa por questão
     setRespostas((r) => ({ ...r, [questaoId]: alternativaId }));
-    // registro assíncrono: se falhar, o aluno não perde o feedback
     fetch('/api/resposta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ questaoId, alternativaId }),
-    }).catch(() => {});
+    }).catch(() => {});                                // o feedback não espera a rede
   }
 
   const concluido = respondidas === questoes.length && questoes.length > 0;
-  const percentual = questoes.length ? Math.round((acertos / questoes.length) * 100) : 0;
+  const pct = questoes.length ? Math.round((acertos / questoes.length) * 100) : 0;
 
   return (
-    <section className="exercicio">
-      <h2>✍️ Exercício da aula</h2>
-      <p className="sub">
-        {questoes.length} questões. Toda alternativa tem comentário — inclusive as que você
-        não marcou. Errou? A questão vai para o seu caderno de erros.
-      </p>
+    <section id="exercicio" style={{ marginTop: 40 }}>
+      <div className="barra-exercicio">
+        <span className="rotulo">Progresso</span>
+        <div className="progresso terciaria">
+          <i style={{ width: `${questoes.length ? (respondidas / questoes.length) * 100 : 0}%` }} />
+        </div>
+        <span className="contador">{respondidas} / {questoes.length}</span>
+      </div>
 
       {questoes.map((q, i) => {
         const marcada = respostas[q.id];
         const acertou = q.alternativas.some((a) => a.id === marcada && a.correta);
         const multipla = q.alternativas.length > 2;
+        const artigo = /art\.?\s*\d+/i.exec(q.alternativas.find((a) => a.correta)?.comentario ?? '')?.[0];
 
         return (
-          <div className="questao" key={q.id}>
-            <div className="qtag">
-              <span className="pill">Questão {i + 1} de {questoes.length}</span>{' '}
-              <span className="pill accent">{q.origem}</span>
+          <div key={q.id} style={{ marginBottom: 40 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="chip chip-secundaria">Questão {i + 1} de {questoes.length}</span>
+              <span className="chip chip-neutra">{q.origem}</span>
             </div>
             <p className="enunciado">{q.enunciado}</p>
 
             {q.alternativas.map((a, j) => {
               const letra = String.fromCharCode(65 + j);
-              const classe = !marcada ? '' : a.correta ? ' correct' : a.id === marcada ? ' wrong' : '';
+              let classe = '';
+              if (marcada) {
+                if (a.correta) classe = ' certa';
+                else if (a.id === marcada) classe = ' errada';
+                else classe = ' apagada';
+              }
               return (
                 <button
-                  className={`q-option${classe}`}
-                  key={a.id}
+                  className={`alternativa${classe}`} key={a.id}
                   disabled={Boolean(marcada)}
                   onClick={() => responder(q.id, a.id)}
                 >
-                  {multipla ? `${letra}) ` : ''}{a.texto}
+                  <span className="letra">
+                    {marcada && a.correta ? <Icone nome="check" tamanho={16} /> : multipla ? letra : letra}
+                  </span>
+                  <span>{a.texto}</span>
                 </button>
               );
             })}
 
             {marcada && (
-              <div className="q-comment show">
-                <strong>{acertou ? '✅ Você acertou.' : '❌ Não foi dessa vez.'}</strong>
-                <ul style={{ marginTop: '.6rem' }}>
-                  {q.alternativas.map((a, j) => (
-                    <li style={{ padding: '.25rem 0' }} key={a.id}>
-                      <strong>{multipla ? `${String.fromCharCode(65 + j)}) ` : ''}</strong>
-                      {a.comentario}
-                    </li>
-                  ))}
-                </ul>
-                {!acertou && (
-                  <p style={{ marginTop: '.6rem' }}>
-                    🔁 Esta questão foi para o seu <strong>caderno de erros</strong>.
-                  </p>
-                )}
+              <div className="comentario">
+                <div className="cabeca">
+                  <span className="selo"><Icone nome="school" /></span>
+                  <div>
+                    <strong>Comentário {professor?.startsWith('Prof.ª') ? 'da Professora' : 'do Professor'}</strong>
+                    <span>{professor ?? 'Equipe Aprendendo o Direito'}</span>
+                  </div>
+                  <span className="xp"><Icone nome="bolt" tamanho={14} /> {acertou ? '+10 XP' : '+3 XP'}</span>
+                </div>
+
+                <p style={{ fontWeight: 700, marginBottom: 12, color: acertou ? 'var(--on-secondary-fixed-variant)' : 'var(--on-error-container)' }}>
+                  {acertou ? 'Excelente escolha!' : 'Não foi dessa vez — e tudo bem, é assim que fixa.'}
+                </p>
+
+                {q.alternativas.map((a, j) => (
+                  <div className="caixa" key={a.id}>
+                    <b>{multipla ? `${String.fromCharCode(65 + j)}) ` : `${a.texto}: `}</b>
+                    {a.comentario}
+                  </div>
+                ))}
+
+                <div className="acoes">
+                  {artigo && (
+                    <a className="btn btn-primario btn-sm" href={`/vademecum?q=${encodeURIComponent(artigo)}`}>
+                      <Icone nome="menu_book" tamanho={18} /> Ler {artigo}
+                    </a>
+                  )}
+                  {!acertou && (
+                    <span className="chip chip-primaria">
+                      <Icone nome="replay" tamanho={16} /> Foi para o seu caderno de erros
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -89,12 +119,9 @@ export default function Exercicio({ questoes }: { questoes: Questao[] }) {
       })}
 
       {concluido && (
-        <div className="empty-state">
-          <strong style={{ fontSize: '1.05rem' }}>
-            Exercício concluído — {acertos} de {questoes.length} ({percentual}%)
-          </strong>
-          <br />
-          {percentual >= 80
+        <div className="resultado-exercicio">
+          <strong>Exercício concluído — {acertos} de {questoes.length} ({pct}%)</strong>
+          {pct >= 80
             ? 'Mandou bem. Pode seguir para a próxima aula com tranquilidade.'
             : 'Vale rever o resumo antes de seguir — as questões erradas já estão no seu caderno de erros.'}
         </div>

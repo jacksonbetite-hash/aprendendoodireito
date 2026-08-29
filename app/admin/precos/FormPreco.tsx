@@ -12,8 +12,8 @@ export default function FormPreco(
 
   return (
     <form action={enviar} className="form-linha">
-      {estado.erro && <p className="alerta-erro" role="alert">{estado.erro}</p>}
-      {estado.ok && <p className="alerta-ok" role="status">{estado.ok}</p>}
+      {estado.erro && <p className="alerta alerta-erro" role="alert">{estado.erro}</p>}
+      {estado.ok && <p className="alerta alerta-ok" role="status">{estado.ok}</p>}
       <div className="campos">
         <label>
           Produto
@@ -36,7 +36,7 @@ export default function FormPreco(
           Vigente a partir de
           <input name="vigenteDe" type="date" defaultValue={hoje} required />
         </label>
-        <button className="btn btn-primary" type="submit" disabled={pendente}>
+        <button className="btn btn-primario" type="submit" disabled={pendente}>
           {pendente ? 'Salvando…' : 'Aplicar'}
         </button>
       </div>

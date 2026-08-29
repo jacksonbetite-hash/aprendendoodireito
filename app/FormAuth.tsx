@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { Icone } from './ui.tsx';
 import type { EstadoForm } from './acoes-auth.ts';
 
 type Acao = (estado: EstadoForm, dados: FormData) => Promise<EstadoForm>;
@@ -9,8 +10,8 @@ type Acao = (estado: EstadoForm, dados: FormData) => Promise<EstadoForm>;
 export function FormEntrar({ acao }: { acao: Acao }) {
   const [estado, enviar, pendente] = useActionState(acao, {});
   return (
-    <form action={enviar} className="form-auth">
-      {estado.erro && <p className="alerta-erro" role="alert">{estado.erro}</p>}
+    <form action={enviar} className="formulario">
+      {estado.erro && <p className="alerta alerta-erro" role="alert"><Icone nome="error" tamanho={20} /> {estado.erro}</p>}
       <label>
         E-mail
         <input name="email" type="email" autoComplete="email" required autoFocus />
@@ -19,7 +20,7 @@ export function FormEntrar({ acao }: { acao: Acao }) {
         Senha
         <input name="senha" type="password" autoComplete="current-password" required />
       </label>
-      <button className="btn btn-primary" type="submit" disabled={pendente}>
+      <button className="btn btn-primario" type="submit" disabled={pendente}>
         {pendente ? 'Entrando…' : 'Entrar'}
       </button>
       <p className="rodape-form">
@@ -32,8 +33,8 @@ export function FormEntrar({ acao }: { acao: Acao }) {
 export function FormCadastro({ acao }: { acao: Acao }) {
   const [estado, enviar, pendente] = useActionState(acao, {});
   return (
-    <form action={enviar} className="form-auth">
-      {estado.erro && <p className="alerta-erro" role="alert">{estado.erro}</p>}
+    <form action={enviar} className="formulario">
+      {estado.erro && <p className="alerta alerta-erro" role="alert"><Icone nome="error" tamanho={20} /> {estado.erro}</p>}
       <label>
         Como podemos te chamar?
         <input name="nome" type="text" autoComplete="name" required autoFocus maxLength={120} />
@@ -47,7 +48,7 @@ export function FormCadastro({ acao }: { acao: Acao }) {
         <input name="senha" type="password" autoComplete="new-password" required minLength={8} />
         <span className="dica">Pelo menos 8 caracteres. Frase curta funciona melhor que sigla.</span>
       </label>
-      <button className="btn btn-primary" type="submit" disabled={pendente}>
+      <button className="btn btn-primario" type="submit" disabled={pendente}>
         {pendente ? 'Criando…' : 'Criar conta grátis'}
       </button>
       <p className="rodape-form">

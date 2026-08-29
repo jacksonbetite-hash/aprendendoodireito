@@ -36,13 +36,13 @@ check(await p.getByText('faz parte de uma matéria licenciada').first().isVisibl
   'visitante vê a oferta na aula licenciada');
 // mas a amostra grátis abre
 await p.goto(base + '/aula/o-que-e-uma-constituicao', { waitUntil: 'load' });
-check(await p.locator('.q-option').first().isVisible(), 'amostra gratuita abre para visitante');
+check(await p.locator('.alternativa').first().isVisible(), 'amostra gratuita abre para visitante');
 
 // ---------- login errado ----------
 await p.goto(base + '/entrar', { waitUntil: 'load' });
 await p.fill('input[name=email]', 'ana@exemplo.com');
 await p.fill('input[name=senha]', 'senha-errada');
-await p.click('button[type=submit]');
+await p.click('form.formulario button[type=submit]');
 await p.waitForTimeout(1200);
 check(await p.locator('.alerta-erro').isVisible(), 'senha errada mostra erro');
 const msg = await p.locator('.alerta-erro').textContent();
@@ -51,7 +51,7 @@ check(!/não existe|não encontrad/i.test(msg ?? ''), 'a mensagem não revela se
 // e-mail inexistente devolve a MESMA mensagem
 await p.fill('input[name=email]', 'ninguem@exemplo.com');
 await p.fill('input[name=senha]', 'seja-la-o-que-for');
-await p.click('button[type=submit]');
+await p.click('form.formulario button[type=submit]');
 await p.waitForTimeout(1200);
 const msg2 = await p.locator('.alerta-erro').textContent();
 check(msg === msg2, 'e-mail inexistente devolve mensagem idêntica (não enumera contas)');
@@ -59,10 +59,10 @@ check(msg === msg2, 'e-mail inexistente devolve mensagem idêntica (não enumera
 // ---------- login do aluno ----------
 await p.fill('input[name=email]', 'ana@exemplo.com');
 await p.fill('input[name=senha]', 'constitucional88');
-await p.click('button[type=submit]');
+await p.click('form.formulario button[type=submit]');
 await p.waitForURL('**/painel*', { timeout: 15000 });
 check(p.url().includes('/painel'), 'login correto leva ao painel');
-check(await p.getByText('Oi, Ana').isVisible(), 'painel mostra o aluno logado');
+check(await p.getByText('Olá,').first().isVisible(), 'painel mostra o aluno logado');
 
 const cookies = await ctx.cookies();
 const sessao = cookies.find(c => c.name === 'ad_sessao');
@@ -81,7 +81,7 @@ await p.goto(base + '/painel', { waitUntil: 'load' });
 await p.screenshot({ path: '/tmp/ad-painel-logado.png', fullPage: true });
 
 // ---------- sair ----------
-await p.click('button.botao-side');
+await p.click('.item-lateral.saida');
 await p.waitForTimeout(1200);
 await p.goto(base + '/painel', { waitUntil: 'load' });
 check(p.url().includes('/entrar'), 'depois de sair, o painel volta a exigir login');
@@ -100,7 +100,7 @@ await p.evaluate(() => {
   document.querySelector('form')?.setAttribute('novalidate', '');
 });
 await p.fill('input[name=senha]', '1234567');
-await p.click('button[type=submit]');
+await p.click('form.formulario button[type=submit]');
 await p.waitForTimeout(1500);
 check(await p.locator('.alerta-erro').isVisible(),
   'senha curta é recusada pelo servidor mesmo sem validação do cliente');
@@ -111,7 +111,7 @@ await p.goto(base + '/cadastrar', { waitUntil: 'load' });
 await p.fill('input[name=nome]', 'Rafael Teste');
 await p.fill('input[name=email]', novoEmail);
 await p.fill('input[name=senha]', 'constitucional-2026');
-await p.click('button[type=submit]');
+await p.click('form.formulario button[type=submit]');
 await p.waitForURL('**/painel*', { timeout: 20000 });
 check(p.url().includes('/painel'), 'cadastro válido entra direto no painel');
 check(await p.getByText('Rafael').first().isVisible(), 'painel saúda o novo aluno');
@@ -125,7 +125,7 @@ await p.goto(base + '/cadastrar', { waitUntil: 'load' });
 await p.fill('input[name=nome]', 'Outro');
 await p.fill('input[name=email]', novoEmail);
 await p.fill('input[name=senha]', 'outra-senha-boa');
-await p.click('button[type=submit]');
+await p.click('form.formulario button[type=submit]');
 await p.waitForTimeout(1200);
 check(await p.locator('.alerta-erro').isVisible(), 'e-mail já cadastrado é recusado');
 await ctx.close();

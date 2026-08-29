@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { Pagina } from '../componentes.tsx';
+import { Pagina, Icone } from '../componentes.tsx';
 import BuscaVade from './BuscaVade.tsx';
 import {
   listarNormas, buscarNorma, dispositivosDaNorma, buscarDispositivos, aulasQueExplicam,
@@ -32,10 +32,10 @@ export default async function VadeMecum(
   );
 
   return (
-    <Pagina>
-      <section className="materia-hero" style={{ paddingBottom: '1.8rem' }}>
+    <Pagina ativo="vademecum">
+      <section className="cabeca-materia">
         <div className="container">
-          <div className="breadcrumb"><Link href="/">Início</Link> › Vade-mécum</div>
+          <div className="trilha-topo"><Link href="/">Início</Link><Icone nome="chevron_right" tamanho={16} /><span>Vade-mécum</span></div>
           <h1>Vade-mécum aberto</h1>
           <p className="sub">
             Consulta livre, sem cadastro. Busque pelo número do artigo (<code>art. 5º</code>)
@@ -46,13 +46,13 @@ export default async function VadeMecum(
       </section>
 
       <div className="container vade-layout">
-        <nav className="vade-nav">
+        <nav className="vade-menu">
           <h3>Acervo</h3>
           {normas.map((n) => (
             <Link
               key={n.id}
               href={`/vademecum?norma=${n.slug}`}
-              className={!termo && atual?.slug === n.slug ? 'active' : ''}
+              className={!termo && atual?.slug === n.slug ? 'ativo' : ''}
             >
               {n.sigla} <span style={{ opacity: .6, fontWeight: 400 }}>· {n.dispositivos}</span>
             </Link>
@@ -62,20 +62,20 @@ export default async function VadeMecum(
         <div>
           <BuscaVade termoInicial={termo} />
 
-          <div className="lei-doc">
+          <div className="norma">
             {termo ? (
               <>
-                <h2 className="lei-titulo">
+                <h2 >
                   {dispositivos.length} {dispositivos.length === 1 ? 'resultado' : 'resultados'} para “{termo}”
                 </h2>
-                <p className="lei-sub">
+                <p className="fonte">
                   Busca full-text em português, com stemming — “poder” encontra “Poderes”.
                 </p>
               </>
             ) : atual && (
               <>
-                <h2 className="lei-titulo">{atual.nome}</h2>
-                <p className="lei-sub">
+                <h2 >{atual.nome}</h2>
+                <p className="fonte">
                   <span style={{ color: 'var(--success-700)', fontWeight: 700 }}>
                     ✔ texto conferido em {new Date(atual.conferidoEm).toLocaleDateString('pt-BR')}
                   </span>{' '}
@@ -88,11 +88,11 @@ export default async function VadeMecum(
               const aulas = aulasPorDispositivo.get(d.id) ?? [];
               return (
                 <div className="dispositivo" key={d.id}>
-                  <div className="d-head">
+                  <div className="cabeca">
                     <strong>{termo ? `${d.normaSigla} · ${d.rotulo}` : d.rotulo}</strong>
-                    <div className="d-acts">
-                      <span className="icon-btn" title="Favoritar">☆</span>
-                      <span className="icon-btn" title="Anotar">✎</span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <span className="botao-icone" title="Favoritar"><Icone nome="star" tamanho={20} /></span>
+                      <span className="botao-icone" title="Anotar"><Icone nome="edit" tamanho={20} /></span>
                     </div>
                   </div>
                   {d.agrupador && !termo && (
@@ -117,7 +117,7 @@ export default async function VadeMecum(
             })}
 
             {dispositivos.length === 0 && (
-              <p className="empty-state">
+              <p className="vazio">
                 Nenhum dispositivo encontrado{termo && ` para “${termo}”`}. O acervo do protótipo
                 cobre uma amostra da CF/88, do CDC, do CC e do CP — a ingestão completa via LexML
                 entra junto com a rotina de atualização.
@@ -125,7 +125,7 @@ export default async function VadeMecum(
             )}
           </div>
 
-          <div className="notice" style={{ marginTop: '1.4rem' }}>
+          <div className="sabia" style={{ marginTop: '1.4rem' }}>
             ⚖️ Textos de lei não são protegidos por direito autoral (Lei 9.610/98, art. 8º, IV).
             A obrigação aqui é de <strong>exatidão e atualização</strong> — por isso cada norma
             carrega a data em que foi conferida.

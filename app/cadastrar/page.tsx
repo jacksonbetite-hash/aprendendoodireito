@@ -12,8 +12,8 @@ export default async function Cadastrar() {
   if (await alunoAtual()) redirect('/painel');
   return (
     <Pagina>
-      <section className="section caixa-auth">
-        <div className="cartao-auth">
+      <section className="secao caixa-auth">
+        <div className="cartao cartao-auth">
           <h1>Criar conta grátis</h1>
           <p className="sub">
             Dá acesso ao vade-mécum completo, à 1ª aula de cada assunto e ao teste de 7 dias.

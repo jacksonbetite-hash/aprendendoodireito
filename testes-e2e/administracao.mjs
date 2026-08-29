@@ -28,7 +28,7 @@ const p = await ctx.newPage();
 await p.goto(base + '/entrar', { waitUntil: 'load' });
 await p.fill('input[name=email]', 'admin@aprendendoodireito.com.br');
 await p.fill('input[name=senha]', senha);
-await p.click('button[type=submit]');
+await p.click('form.formulario button[type=submit]');
 await p.waitForURL('**/painel*', { timeout: 20000 });
 check(await p.locator('a[href="/admin"]').first().isVisible(), 'admin vê o acesso à administração');
 
@@ -42,7 +42,7 @@ await p.screenshot({ path: '/tmp/ad-admin-visao.png', fullPage: true });
 // propagação e RESTAURA o original — rodar duas vezes seguidas dá o
 // mesmo resultado, e a tabela não fica suja.
 await p.goto(base + '/planos', { waitUntil: 'load' });
-const precoAntes = (await p.locator('.plan.featured .price').textContent())?.trim() ?? '';
+const precoAntes = (await p.locator('.plano.destaque .valor').textContent())?.trim() ?? '';
 const reaisAntes = Number(precoAntes.replace(/[^\d,]/g, '').replace(',', '.'));
 check(reaisAntes > 0, `planos mostra o preço vigente (${precoAntes})`);
 
@@ -59,11 +59,11 @@ check(await p.locator('.alerta-ok').isVisible(), 'alteração de preço confirma
 await p.screenshot({ path: '/tmp/ad-admin-precos.png', fullPage: true });
 
 await p.goto(base + '/planos', { waitUntil: 'load' });
-const precoDepois = (await p.locator('.plan.featured .price').textContent())?.trim() ?? '';
+const precoDepois = (await p.locator('.plano.destaque .valor').textContent())?.trim() ?? '';
 check(precoDepois.includes(valorTeste), `planos já mostra o preço novo (${precoDepois})`);
 
 await p.goto(base + '/catalogo', { waitUntil: 'load' });
-check((await p.locator('.materia-card .foot').first().textContent())?.includes(valorTeste),
+check((await p.locator('.cartao-area div').first().textContent())?.includes(valorTeste),
   'o catálogo também reflete o preço novo (uma fonte de verdade)');
 
 // restaura
@@ -72,12 +72,12 @@ await p.fill('input[name=valor]', reaisAntes.toFixed(2).replace('.', ','));
 await p.click('form.form-linha button[type=submit]');
 await p.waitForTimeout(2000);
 await p.goto(base + '/planos', { waitUntil: 'load' });
-check((await p.locator('.plan.featured .price').textContent())?.trim() === precoAntes,
+check((await p.locator('.plano.destaque .valor').textContent())?.trim() === precoAntes,
   'preço restaurado ao valor original');
 
 // o histórico guarda a passagem, mesmo depois de restaurar
 await p.goto(base + '/admin/precos', { waitUntil: 'load' });
-const historico = await p.locator('.panel').last().textContent();
+const historico = await p.locator('.cartao').last().textContent();
 check((historico?.match(/R\$/g) ?? []).length > 0,
   'o preço anterior virou histórico, não foi apagado');
 

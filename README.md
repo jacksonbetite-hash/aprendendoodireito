@@ -6,7 +6,14 @@ Plataforma de ensino jurídico descrita em [`discovery.md`](discovery.md) (v1.0,
 > Entender Direito sem precisar decorar. Aula curta, linguagem de gente, a lei
 > ao lado e um exercício no final para provar que você aprendeu.
 
-## Subir tudo
+## Instalar na sua máquina
+
+**Windows:** siga [`INSTALAR-NO-WINDOWS.md`](INSTALAR-NO-WINDOWS.md) — clone,
+Docker Desktop e `.\instalar.ps1`.
+
+**macOS e Linux:** `./instalar.sh`
+
+Ou, se preferir os comandos crus:
 
 ```bash
 docker compose up -d --build
@@ -60,6 +67,7 @@ trial e licença promocional ativos, para o fluxo do aluno ser navegável na hor
 | **Vade-mécum §5.4** | Busca full-text em português com stemming, tolerante a acento, com apelidos indexados e deep link bidirecional aula ↔ artigo |
 | **Exercícios §5.5** | Correção imediata com comentário em todas as alternativas; respostas gravadas alimentam estatística e caderno de erros |
 | **Área do aluno §5.2** | Continue de onde parou, progresso por matéria, licenças com escopo e origem, caderno de erros |
+| **Identidade visual §9** | Design system "Direito Leve" (terracota, teal e mostarda; Montserrat + Quicksand) aplicado a todas as telas, conforme o material entregue. Ver [`docs/identidade-visual.md`](docs/identidade-visual.md) |
 | **Preços §7 e §5.9** | Tabela **no banco, com vigência e histórico**: o preço novo vale a partir da data escolhida e não afeta licença vigente. Telas de planos, catálogo e matéria leem a mesma fonte |
 | **Autenticação §10** | E-mail e senha com scrypt, sessão revogável (o banco guarda só o hash do token), cookie httpOnly + SameSite. Papéis `aluno`/`admin` |
 | **Administração §5.9** | Visão geral, tabela de valores com histórico, concessão e extensão de licenças, busca de alunos — tudo **auditado** (quem, o quê, quando) na mesma transação da alteração |

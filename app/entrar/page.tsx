@@ -12,8 +12,8 @@ export default async function Entrar() {
   if (await alunoAtual()) redirect('/painel');
   return (
     <Pagina>
-      <section className="section caixa-auth">
-        <div className="cartao-auth">
+      <section className="secao caixa-auth">
+        <div className="cartao cartao-auth">
           <h1>Bom te ver de novo</h1>
           <p className="sub">Entre para continuar de onde parou.</p>
           <FormEntrar acao={entrar} />

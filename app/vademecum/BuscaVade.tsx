@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Icone } from '../ui.tsx';
 
 /** Busca do vade-mécum com o atalho global "/" pedido no §5.4. */
 export default function BuscaVade({ termoInicial }: { termoInicial: string }) {
@@ -26,8 +27,8 @@ export default function BuscaVade({ termoInicial }: { termoInicial: string }) {
   }
 
   return (
-    <form className="searchbar" onSubmit={submeter}>
-      <span>🔎</span>
+    <form className="busca-vade" onSubmit={submeter}>
+      <Icone nome="search" tamanho={22} />
       <input
         ref={campo}
         value={termo}

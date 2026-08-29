@@ -14,18 +14,18 @@ export default async function Licencas() {
 
   return (
     <>
-      <h1>Licenças</h1>
-      <p className="sub">
+      <h1 className="headline-lg">Licenças</h1>
+      <p className="suave">
         Conceder cortesia, estender e suspender. Toda ação fica registrada na auditoria.
       </p>
 
-      <div className="panel">
-        <h2>Conceder cortesia</h2>
+      <div className="cartao">
+        <h2 className="headline-md">Conceder cortesia</h2>
         <FormConceder acao={acaoConcederLicenca} alunos={alunos} materias={materias} />
       </div>
 
-      <div className="panel" style={{ marginBottom: 0 }}>
-        <h2>Licenças emitidas</h2>
+      <div className="cartao" style={{ marginBottom: 0 }}>
+        <h2 className="headline-md">Licenças emitidas</h2>
         <table className="tabela">
           <thead>
             <tr>
@@ -41,10 +41,10 @@ export default async function Licencas() {
                   <br /><span className="suave">{l.usuarioEmail}</span>
                 </td>
                 <td>{l.escopo === 'CATALOGO' ? 'Passe completo' : l.materiaNome}</td>
-                <td><span className="pill">{l.origem.toLowerCase()}</span></td>
-                <td className="suave nowrap">{DATA(l.inicioEm)} → {DATA(l.fimEm)}</td>
+                <td><span className="chip chip-neutra">{l.origem.toLowerCase()}</span></td>
+                <td className="suave apertado">{DATA(l.inicioEm)} → {DATA(l.fimEm)}</td>
                 <td>
-                  <span className={`pill ${l.vigente ? 'free' : 'locked'}`}>
+                  <span className={`chip ${l.vigente ? 'chip-secundaria' : 'chip-neutra'}`}>
                     {l.vigente ? 'vigente' : l.status.toLowerCase()}
                   </span>
                 </td>
@@ -53,12 +53,12 @@ export default async function Licencas() {
                     <form action={acaoEstender}>
                       <input type="hidden" name="licencaId" value={l.id} />
                       <input type="hidden" name="dias" value="30" />
-                      <button className="btn btn-outline btn-sm" type="submit">+30 dias</button>
+                      <button className="btn btn-contorno btn-sm" type="submit">+30 dias</button>
                     </form>
                     <form action={acaoSuspender}>
                       <input type="hidden" name="licencaId" value={l.id} />
                       <input type="hidden" name="status" value={l.status === 'SUSPENSA' ? 'ATIVA' : 'SUSPENSA'} />
-                      <button className="btn btn-outline btn-sm" type="submit">
+                      <button className="btn btn-contorno btn-sm" type="submit">
                         {l.status === 'SUSPENSA' ? 'Reativar' : 'Suspender'}
                       </button>
                     </form>

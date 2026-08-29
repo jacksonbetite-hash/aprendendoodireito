@@ -3,15 +3,20 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Aprendendo o Direito — entender Direito sem precisar decorar',
+    default: 'Aprendendo o Direito — entenda Direito sem decorar',
     template: '%s | Aprendendo o Direito',
   },
   description:
-    'Aula curta, linguagem de gente, a lei ao lado e um exercício no final. Estude Direito por matéria, do jeito que cabe na sua rotina.',
+    'Transformamos conceitos complexos em uma jornada de aprendizado visual, empática e focada no que realmente importa para a sua compreensão.',
 };
 
+/* Montserrat nos títulos, Quicksand no texto, Lora só na lei.
+   Os ícones são SVG embutido (app/ui.tsx), sem dependência de rede. */
 const FONTES =
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&display=swap';
+  'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700' +
+  '&family=Quicksand:wght@400;500;600;700' +
+  '&family=Lora:ital,wght@0,400;0,500;1,400' +
+  '&display=swap';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -13,14 +13,14 @@ export default async function Precos() {
 
   return (
     <>
-      <h1>Tabela de valores</h1>
-      <p className="sub">
+      <h1 className="headline-lg">Tabela de valores</h1>
+      <p className="suave">
         O preço novo vale a partir da data que você escolher e <strong>não afeta licença já
         vigente</strong>. O anterior não é apagado: vira histórico.
       </p>
 
-      <div className="panel">
-        <h2>Vigente hoje</h2>
+      <div className="cartao">
+        <h2 className="headline-md">Vigente hoje</h2>
         <table className="tabela">
           <thead>
             <tr><th>Produto</th><th>Período</th><th>Valor</th><th>Por mês</th><th>Desde</th></tr>
@@ -38,7 +38,7 @@ export default async function Precos() {
                     <td className="suave">
                       {centavos && MESES[periodo] > 1 ? `${brl(porMes(centavos, periodo))}/mês` : '—'}
                     </td>
-                    <td className="suave nowrap">{dataBR(linha?.vigenteDe ?? null)}</td>
+                    <td className="suave apertado">{dataBR(linha?.vigenteDe ?? null)}</td>
                   </tr>
                 );
               }),
@@ -47,15 +47,15 @@ export default async function Precos() {
         </table>
       </div>
 
-      <div className="panel">
-        <h2>Alterar um preço</h2>
+      <div className="cartao">
+        <h2 className="headline-md">Alterar um preço</h2>
         <FormPreco acao={acaoAlterarPreco} />
       </div>
 
-      <div className="panel" style={{ marginBottom: 0 }}>
-        <h2>Histórico</h2>
+      <div className="cartao" style={{ marginBottom: 0 }}>
+        <h2 className="headline-md">Histórico</h2>
         {passados.length === 0 ? (
-          <div className="empty-state">Nenhum preço foi alterado ainda.</div>
+          <div className="vazio">Nenhum preço foi alterado ainda.</div>
         ) : (
           <table className="tabela">
             <thead>
@@ -67,8 +67,8 @@ export default async function Precos() {
                   <td>{h.produto === 'MATERIA' ? 'Matéria' : 'Passe'}</td>
                   <td>{h.periodo}</td>
                   <td>{brl(h.centavos)}</td>
-                  <td className="suave nowrap">{dataBR(h.vigenteDe)}</td>
-                  <td className="suave nowrap">{dataBR(h.vigenteAte)}</td>
+                  <td className="suave apertado">{dataBR(h.vigenteDe)}</td>
+                  <td className="suave apertado">{dataBR(h.vigenteAte)}</td>
                   <td className="suave">{h.criadoPor}</td>
                 </tr>
               ))}

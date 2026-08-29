@@ -1,24 +1,23 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { Pagina } from '../../componentes.tsx';
+import { Pagina, Icone } from '../../componentes.tsx';
 import {
-  buscarMateria, listarAulasDaMateria, listarMaterias, formatarDuracao,
+  buscarMateria, listarAulasDaMateria, formatarDuracao,
 } from '../../../lib/catalogo.ts';
 import { espectadorAtual } from '../../../lib/sessao.ts';
+import { podeAcessar } from '../../../lib/licenca.ts';
 import { brl, porMes } from '../../../lib/precos.ts';
 import { tabelaVigente } from '../../../lib/precos-consultas.ts';
-import { podeAcessar } from '../../../lib/licenca.ts';
 
-export const dynamic = 'force-dynamic';  // o cadeado depende da licença de quem olha
+export const dynamic = 'force-dynamic';   // o cadeado depende de quem olha
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
   const { slug } = await params;
-  const materia = await buscarMateria(slug);
-  if (!materia) return { title: 'Matéria não encontrada' };
-  return { title: materia.nome, description: materia.ementa };
+  const m = await buscarMateria(slug);
+  return m ? { title: m.nome, description: m.ementa } : { title: 'Matéria não encontrada' };
 }
 
 export default async function PaginaMateria({ params }: { params: Promise<{ slug: string }> }) {
@@ -27,80 +26,79 @@ export default async function PaginaMateria({ params }: { params: Promise<{ slug
   if (!materia) notFound();
 
   const [aulas, espectador, tabela] = await Promise.all([
-    listarAulasDaMateria(materia.id),
-    espectadorAtual(),
-    tabelaVigente(),
+    listarAulasDaMateria(materia.id), espectadorAtual(), tabelaVigente(),
   ]);
-
   const publicadas = aulas.filter((a) => a.status === 'publicado');
   const emProducao = aulas.filter((a) => a.status !== 'publicado');
   const assuntos = [...new Set(publicadas.map((a) => a.assuntoSlug))];
 
   return (
-    <Pagina>
-      <section className="materia-hero">
+    <Pagina ativo="catalogo">
+      <section className="cabeca-materia">
         <div className="container">
-          <div className="breadcrumb">
-            <Link href="/">Início</Link> › <Link href="/catalogo">Matérias</Link> › {materia.areaNome}
+          <div className="trilha-topo">
+            <Link href="/">Início</Link><Icone nome="chevron_right" tamanho={16} />
+            <Link href="/catalogo">Catálogo</Link><Icone nome="chevron_right" tamanho={16} />
+            <span>{materia.areaNome}</span>
           </div>
-          <span className="pill wave">{materia.onda}ª onda · publicada</span>
+          <span className="chip chip-secundaria" style={{ marginTop: 12 }}>{materia.onda}ª onda · publicada</span>
           <h1>{materia.nome}</h1>
           <p className="sub">{materia.ementa}</p>
           {materia.professor && (
-            <div className="prof-chip">
+            <div className="professor">
               <span className="avatar">
                 {materia.professor.replace(/^Prof\.?ª?\s*/, '').split(' ').map((p) => p[0]).slice(0, 2).join('')}
               </span>
-              <span><strong>{materia.professor}</strong></span>
+              <strong>{materia.professor}</strong>
             </div>
           )}
         </div>
       </section>
 
-      <section className="section" style={{ paddingTop: '2.4rem' }}>
-        <div className="container materia-layout">
+      <section className="secao" style={{ paddingTop: 40 }}>
+        <div className="container materia-grade">
           <div>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.6rem', fontSize: '.9rem', color: 'var(--ink-soft)' }}>
-              <span>📚 {assuntos.length} assuntos</span>
-              <span>🎬 {materia.aulasPublicadas} aulas</span>
-              <span>✍️ {materia.questoes} questões</span>
-              <span>⏱ {formatarDuracao(materia.duracaoTotal)} de vídeo</span>
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 28, fontSize: 14 }} className="suave">
+              <span><Icone nome="library_books" tamanho={18} /> {assuntos.length} assuntos</span>
+              <span><Icone nome="play_circle" tamanho={18} /> {materia.aulasPublicadas} aulas</span>
+              <span><Icone nome="edit_note" tamanho={18} /> {materia.questoes} questões</span>
+              <span><Icone nome="schedule" tamanho={18} /> {formatarDuracao(materia.duracaoTotal)} de vídeo</span>
             </div>
 
             {assuntos.map((assuntoSlug, i) => {
               const doAssunto = publicadas.filter((a) => a.assuntoSlug === assuntoSlug);
               return (
-                <div className="assunto" key={assuntoSlug}>
+                <div className="assunto-bloco" key={assuntoSlug}>
                   <h3>
                     {i + 1}. {doAssunto[0].assuntoNome}
-                    {doAssunto.some((a) => a.amostraGratuita) && <span className="pill free">1ª aula grátis</span>}
+                    {doAssunto.some((a) => a.amostraGratuita) && (
+                      <span className="chip chip-secundaria">1ª aula grátis</span>
+                    )}
                   </h3>
                   {doAssunto.map((aula) => {
-                    const decisao = podeAcessar(espectador, {
+                    const d = podeAcessar(espectador, {
                       id: aula.id, materiaId: materia.id,
                       amostraGratuita: aula.amostraGratuita, noTrial: aula.noTrial,
                     });
                     const etiqueta = aula.amostraGratuita
-                      ? { classe: 'free', texto: 'Grátis' }
-                      : decisao.libera
-                        ? { classe: 'wave', texto: decisao.motivo === 'TRIAL' ? 'Teste' : 'Liberada' }
-                        : { classe: 'locked', texto: 'Licença' };
-
-                    const conteudo = (
-                      <>
-                        <span className="num">{decisao.libera ? '▶' : '🔒'}</span>
-                        <span className="t">
+                      ? { c: 'chip-secundaria', t: 'Grátis' }
+                      : d.libera
+                        ? { c: 'chip-terciaria', t: d.motivo === 'TRIAL' ? 'Teste' : 'Liberada' }
+                        : { c: 'chip-neutra', t: 'Licença' };
+                    return (
+                      <Link
+                        className={`linha-aula ${d.libera ? (aula.amostraGratuita ? 'concluida' : '') : 'bloqueada'}`}
+                        href={`/aula/${aula.slug}`} key={aula.id}
+                      >
+                        <span className="estado">
+                          <Icone nome={d.libera ? 'play_arrow' : 'lock'} />
+                        </span>
+                        <span className="texto">
                           <strong>{aula.titulo}</strong>
                           <span>{formatarDuracao(aula.duracaoSegundos)} · {aula.questoes} questões</span>
                         </span>
-                        <span className={`pill ${etiqueta.classe}`}>{etiqueta.texto}</span>
-                      </>
-                    );
-
-                    return decisao.libera ? (
-                      <Link className="aula-row" href={`/aula/${aula.slug}`} key={aula.id}>{conteudo}</Link>
-                    ) : (
-                      <Link className="aula-row locked" href={`/aula/${aula.slug}`} key={aula.id}>{conteudo}</Link>
+                        <span className={`chip ${etiqueta.c}`}>{etiqueta.t}</span>
+                      </Link>
                     );
                   })}
                 </div>
@@ -108,37 +106,37 @@ export default async function PaginaMateria({ params }: { params: Promise<{ slug
             })}
 
             {emProducao.length > 0 && (
-              <div className="notice">
-                ✍️ Mais {emProducao.length} {emProducao.length === 1 ? 'aula gravada aguarda' : 'aulas gravadas aguardam'} o
-                exercício para ir ao ar. Aula sem exercício não é publicada — é regra, não exceção.
+              <div className="aviso">
+                <strong>Mais {emProducao.length} {emProducao.length === 1 ? 'aula gravada aguarda' : 'aulas gravadas aguardam'} o exercício</strong>{' '}
+                para ir ao ar. Aula sem exercício não é publicada — é regra, não exceção.
               </div>
             )}
           </div>
 
-          <aside className="card compra-box">
-            <div style={{ fontSize: '.8rem', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-soft)', fontWeight: 800, marginBottom: '.5rem' }}>
-              Licença desta matéria
+          <aside className="cartao caixa-compra">
+            <span className="label-md suave">LICENÇA DESTA MATÉRIA</span>
+            <div className="preco" style={{ marginTop: 8 }}>
+              {brl(tabela.MATERIA.mensal)}<small>/mês</small>
             </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--brand-900)' }}>
-              {brl(tabela.MATERIA.mensal)}<small style={{ fontSize: '.9rem', fontFamily: 'var(--font-body)', color: 'var(--ink-soft)', fontWeight: 600 }}>/mês</small>
-            </div>
-            <p style={{ fontSize: '.82rem', color: 'var(--ink-soft)', marginBottom: '1.1rem' }}>
+            <p className="caption suave">
               ou {brl(tabela.MATERIA.anual)} no plano anual ({brl(porMes(tabela.MATERIA.anual, 'anual'))}/mês)
             </p>
-            <Link className="btn btn-primary" style={{ width: '100%', marginBottom: '.6rem' }} href="/planos">
-              Assinar esta matéria
-            </Link>
-            <Link className="btn btn-outline" style={{ width: '100%', marginBottom: '1.1rem' }} href="/planos">
-              Testar 7 dias grátis
-            </Link>
-            <ul style={{ fontSize: '.88rem' }}>
-              <li style={{ padding: '.3rem 0' }}>✔ {materia.aulasPublicadas} aulas em vídeo com legendas</li>
-              <li style={{ padding: '.3rem 0' }}>✔ {materia.questoes} questões comentadas</li>
-              <li style={{ padding: '.3rem 0' }}>✔ Vade-mécum dentro da aula</li>
-              <li style={{ padding: '.3rem 0' }}>✔ Material de apoio em PDF</li>
-              <li style={{ padding: '.3rem 0' }}>✔ Anotações e caderno de erros</li>
+            <div className="pilha-sm" style={{ marginTop: 20 }}>
+              <Link className="btn btn-primario" href="/planos">Assinar esta matéria</Link>
+              <Link className="btn btn-contorno" href="/cadastrar">Testar 7 dias grátis</Link>
+            </div>
+            <ul className="lista-inclui">
+              {[
+                `${materia.aulasPublicadas} aulas em vídeo com legendas`,
+                `${materia.questoes} questões comentadas`,
+                'Vade-mécum dentro da aula',
+                'Material de apoio em PDF',
+                'Anotações e caderno de erros',
+              ].map((t) => (
+                <li key={t}><Icone nome="check_circle" /> {t}</li>
+              ))}
             </ul>
-            <p style={{ fontSize: '.78rem', color: 'var(--ink-soft)', marginTop: '1rem', borderTop: '1px dashed var(--line)', paddingTop: '.8rem' }}>
+            <p className="caption suave" style={{ borderTop: '1px dashed var(--surface-variant)', paddingTop: 14 }}>
               Arrependeu? Devolvemos 100% em até 7 dias, sem justificativa (CDC, art. 49).
             </p>
           </aside>

@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { Marca } from '../componentes.tsx';
+import { Icone } from '../componentes.tsx';
+import { Anel } from '../AnelProgresso.tsx';
 import { sair } from '../acoes-auth.ts';
 import {
   alunoAtual, licencasDo, progressoPorMateria, continuarDeOndeParou,
@@ -10,17 +11,17 @@ import {
 import { licencaVigente } from '../../lib/licenca.ts';
 import { formatarDuracao } from '../../lib/catalogo.ts';
 
-export const metadata: Metadata = { title: 'Painel do aluno' };
+export const metadata: Metadata = { title: 'Minha jornada' };
 export const dynamic = 'force-dynamic';
 
 const DATA = (d: Date) => new Date(d).toLocaleDateString('pt-BR');
+const CORES = ['var(--tertiary-container)', 'var(--secondary)', 'var(--primary)'];
 
 export default async function Painel(
   { searchParams }: { searchParams: Promise<{ 'sem-acesso'?: string; bemvindo?: string }> },
 ) {
   const busca = await searchParams;
   const aluno = await alunoAtual();
-
   if (!aluno) redirect('/entrar?destino=/painel');
 
   const [licencas, progresso, continuar, stats, erros] = await Promise.all([
@@ -29,171 +30,213 @@ export default async function Painel(
   ]);
 
   const agora = new Date();
-  const ativas = licencas.filter((l) =>
-    licencaVigente({ ...l, inicioEm: new Date(l.inicioEm), fimEm: new Date(l.fimEm) }, agora),
-  );
+  const comDatas = licencas.map((l) => ({ ...l, inicioEm: new Date(l.inicioEm), fimEm: new Date(l.fimEm) }));
+  const ativas = comDatas.filter((l) => licencaVigente(l, agora));
   const trial = ativas.find((l) => l.origem === 'TRIAL');
-  const diasDeTrial = trial
-    ? Math.max(0, Math.ceil((new Date(trial.fimEm).getTime() - agora.getTime()) / 86_400_000))
+  const diasTrial = trial
+    ? Math.max(0, Math.ceil((trial.fimEm.getTime() - agora.getTime()) / 86_400_000))
     : null;
+  const pctRetomar = continuar
+    ? Math.round((continuar.segundosAssistidos / continuar.duracaoSegundos) * 100)
+    : 0;
 
   return (
-    <div className="app-body">
-      <div className="app-shell">
-        <aside className="sidebar">
-          <Marca claro />
-          <div className="side-link active">🏠 Início</div>
-          <Link className="side-link" href="/catalogo">📚 Minhas matérias</Link>
-          <div className="side-link">🔁 Caderno de erros</div>
-          <Link className="side-link" href="/vademecum">📖 Vade-mécum</Link>
-          <div className="side-link">💳 Minha conta</div>
-          {aluno.papel === 'admin' && (
-            <Link className="side-link" href="/admin">⚙ Administração</Link>
-          )}
-          <form action={sair} style={{ marginTop: 'auto' }}>
-            <button className="side-link botao-side" type="submit">🚪 Sair</button>
-          </form>
-        </aside>
+    <div className="app">
+      <aside className="lateral">
+        <div className="lateral-marca">
+          <span className="nome">Minha Jornada</span>
+          <span className="sub">{aluno.papel === 'admin' ? 'Administração' : 'Estudante de Direito'}</span>
+        </div>
+        <span className="item-lateral ativo"><Icone nome="dashboard" /> Dashboard</span>
+        <Link className="item-lateral" href="/catalogo"><Icone nome="menu_book" /> Catálogo</Link>
+        <Link className="item-lateral" href="/vademecum"><Icone nome="gavel" /> Vade-mécum</Link>
+        <Link className="item-lateral" href="/planos"><Icone nome="loyalty" /> Planos</Link>
+        {aluno.papel === 'admin' && (
+          <Link className="item-lateral" href="/admin"><Icone nome="settings" /> Administração</Link>
+        )}
+        <form action={sair} style={{ marginTop: 'auto' }}>
+          <button className="item-lateral saida" type="submit"><Icone nome="logout" /> Sair</button>
+        </form>
+      </aside>
 
-        <main className="app-main">
-          <h1>Oi, {aluno.nome.split(' ')[0]} 👋</h1>
+      <div className="conteudo">
+        <div className="barra-superior">
+          <Link className="marca" href="/"><span className="simbolo mono"><Icone nome="balance" tamanho={22} /></span> Aprendendo o Direito</Link>
+          <div className="usuario">
+            <span className="sino"><Icone nome="notifications" tamanho={24} /></span>
+            <span className="avatar">{aluno.nome.split(' ').map((p) => p[0]).slice(0, 2).join('')}</span>
+            <strong className="label-md">{aluno.nome.split(' ')[0]}</strong>
+          </div>
+        </div>
+
+        <div className="miolo">
           {busca['sem-acesso'] && (
-            <p className="alerta-erro" role="alert" style={{ marginBottom: '1rem' }}>
-              Sua conta não tem acesso à administração.
+            <p className="alerta alerta-erro" role="alert">
+              <Icone nome="lock" tamanho={20} /> Sua conta não tem acesso à administração.
             </p>
           )}
           {busca.bemvindo && (
-            <p className="alerta-ok" role="status" style={{ marginBottom: '1rem' }}>
+            <p className="alerta alerta-ok" role="status">
+              <Icone nome="celebration" tamanho={20} />
               Conta criada! Comece pela 1ª aula de cada assunto — ela é aberta — ou ative seu teste de 7 dias.
             </p>
           )}
-          <p className="sub">
-            {diasDeTrial !== null
-              ? `Seu teste gratuito termina em ${diasDeTrial} ${diasDeTrial === 1 ? 'dia' : 'dias'}.`
-              : 'Bom estudo. Continue de onde parou.'}
-          </p>
 
-          {continuar && (
-            <Link className="continue-card" href={`/aula/${continuar.slug}`}>
-              <span className="thumb">▶</span>
-              <div className="info">
-                <div className="k">Continue de onde parou</div>
-                <h2>{continuar.titulo}</h2>
-                <div className="bar">
-                  <i style={{ width: `${Math.round((continuar.segundosAssistidos / continuar.duracaoSegundos) * 100)}%` }} />
-                </div>
-                <p style={{ fontSize: '.82rem', opacity: .85, marginTop: '.4rem' }}>
-                  {formatarDuracao(continuar.segundosAssistidos)} de {formatarDuracao(continuar.duracaoSegundos)} · {continuar.materiaNome}
-                </p>
-              </div>
-              <span className="btn btn-accent">Retomar aula</span>
-            </Link>
-          )}
-
-          <div className="stat-row">
-            <div className="stat">
-              <strong>{progresso.reduce((s, p) => s + p.aulasConcluidas, 0)} de {progresso.reduce((s, p) => s + p.aulasTotal, 0)}</strong>
-              <span>aulas concluídas nas suas matérias</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div className="saudacao">
+              <h2>Olá, <em>{aluno.nome.split(' ')[0]}!</em> 👋</h2>
+              <p>Pronta para continuar dominando o Direito hoje?</p>
             </div>
-            <div className="stat">
-              <strong>{stats.respondidas}</strong>
-              <span>exercícios respondidos · {stats.percentual}% de acerto</span>
-            </div>
-            <div className="stat">
-              <strong>{ativas.length}</strong>
-              <span>{ativas.length === 1 ? 'licença ativa' : 'licenças ativas'}</span>
-            </div>
-          </div>
-
-          <div className="panel">
-            <h2>Seu progresso</h2>
-            {progresso.length === 0 && (
-              <p className="empty-state">
-                Você ainda não tem matéria liberada. Comece pelo teste gratuito de 7 dias.
-              </p>
+            {diasTrial !== null && (
+              <span className="aviso" style={{ borderRadius: 'var(--r-md)', borderLeftWidth: 4, display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                <Icone nome="timer" tamanho={20} />
+                Teste Grátis: <strong>{diasTrial === 1 ? 'Falta 1 dia' : `Faltam ${diasTrial} dias`}</strong>
+              </span>
             )}
-            {progresso.map((p) => (
-              <div className="prog-row" key={p.materiaSlug}>
-                <span className="nome">
-                  <Link href={`/materia/${p.materiaSlug}`}>{p.materiaNome}</Link>
-                </span>
-                <span className="bar"><i style={{ width: `${p.percentual}%` }} /></span>
-                <span className="pct">{p.percentual}%</span>
-              </div>
-            ))}
           </div>
 
-          <div className="panel">
-            <h2>Suas licenças</h2>
-            {licencas.map((l) => {
-              const vigente = licencaVigente(
-                { ...l, inicioEm: new Date(l.inicioEm), fimEm: new Date(l.fimEm) }, agora,
-              );
+          <div className="grade-2" style={{ gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)' }}>
+            {continuar ? (
+              <div className="retomar">
+                <span className="play"><Icone nome="play_arrow" tamanho={28} /></span>
+                <span className="chip chip-primaria" style={{ justifySelf: 'start' }}>CONTINUE DE ONDE PAROU</span>
+                <div>
+                  <h3>{continuar.titulo}</h3>
+                  <p className="trilha">{continuar.materiaNome}</p>
+                </div>
+                <div>
+                  <div className="rotulo-progresso">
+                    <span>Progresso da Aula</span><b>{pctRetomar}%</b>
+                  </div>
+                  <div className="progresso"><i style={{ width: `${pctRetomar}%` }} /></div>
+                </div>
+                <Link className="btn btn-primario" style={{ justifySelf: 'start' }} href={`/aula/${continuar.slug}`}>
+                  Retomar Aula <Icone nome="arrow_forward" tamanho={20} />
+                </Link>
+              </div>
+            ) : (
+              <div className="retomar">
+                <span className="chip chip-secundaria" style={{ justifySelf: 'start' }}>COMECE POR AQUI</span>
+                <h3>Sua jornada começa agora</h3>
+                <p className="trilha">
+                  A 1ª aula de cada assunto é aberta. Escolha uma matéria e comece sem pagar nada.
+                </p>
+                <Link className="btn btn-primario" style={{ justifySelf: 'start' }} href="/catalogo">
+                  Ver o catálogo <Icone nome="arrow_forward" tamanho={20} />
+                </Link>
+              </div>
+            )}
+
+            <div className="pilha-md">
+              <Link className="cartao-vade" href="/vademecum">
+                <Icone nome="gavel" className="balanca" />
+                <span className="lupa"><Icone nome="search" tamanho={22} /></span>
+                <h3>Vade-mécum</h3>
+                <p>Busca inteligente de leis e jurisprudência</p>
+              </Link>
+              <Link className="atalho" href={erros.length ? `/aula/${erros[0].aulaSlug}` : '/catalogo'}>
+                <span className="selo selo-primaria"><Icone nome="edit_note" /></span>
+                <span className="texto">
+                  <strong>Caderno de Erros</strong>
+                  <span>{erros.length ? `${erros.length} para revisar` : 'Revise suas dificuldades'}</span>
+                </span>
+                <Icone nome="chevron_right" tamanho={22} />
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="label-md suave" style={{ marginBottom: 16 }}>SEU DESEMPENHO</h3>
+            {progresso.length === 0 ? (
+              <p className="vazio">
+                Você ainda não tem matéria liberada. Comece pelo teste gratuito de 7 dias —
+                seu progresso aparece aqui.
+              </p>
+            ) : (
+              <div className="grade-2">
+                {progresso.map((p, i) => {
+                  const cor = CORES[i % CORES.length];
+                  return (
+                    <Link className="cartao desempenho" href={`/materia/${p.materiaSlug}`} key={p.materiaSlug}>
+                      <Anel pct={p.percentual} cor={cor} />
+                      <div>
+                        <div className="nome">{p.materiaNome}</div>
+                        <div className="detalhe">{p.aulasConcluidas} de {p.aulasTotal} aulas</div>
+                        <div className="pontos" style={{ ['--cor-anel' as string]: cor }}>
+                          {Array.from({ length: Math.max(3, p.aulasTotal) }).slice(0, 4).map((_, k) => (
+                            <i className={k < Math.round((p.percentual / 100) * 4) ? 'cheio' : ''} key={k} />
+                          ))}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="sabia">
+            <div className="titulo"><Icone nome="lightbulb" tamanho={20} /> Você sabia?</div>
+            {stats.respondidas > 0 ? (
+              <>
+                Você já respondeu <strong>{stats.respondidas} questões</strong> com{' '}
+                <strong>{stats.percentual}% de acerto</strong>. Revisar o Caderno de Erros 24 horas
+                após errar aumenta a retenção do conteúdo jurídico em até 60%.
+              </>
+            ) : (
+              <>
+                Toda aula daqui termina em exercício, e <strong>toda alternativa tem comentário</strong> —
+                inclusive as que você não marcou. É assim que o erro vira aprendizado.
+              </>
+            )}
+          </div>
+
+          <div className="cartao">
+            <h2 className="headline-md" style={{ marginBottom: 16 }}>Suas licenças</h2>
+            {comDatas.length === 0 && <p className="vazio">Nenhuma licença ainda.</p>}
+            {comDatas.map((l) => {
+              const vigente = licencaVigente(l, agora);
               return (
-                <div className="lic-row" key={l.id}>
-                  <span>
-                    <strong>
+                <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--surface-container)', flexWrap: 'wrap' }}>
+                  <div>
+                    <strong className="label-md">
                       {l.escopo === 'CATALOGO' ? 'Passe completo' : l.materiaNome}
                     </strong>
-                    <br />
-                    <span style={{ color: 'var(--ink-soft)', fontSize: '.83rem' }}>
-                      Escopo: {l.escopo.toLowerCase()} · Origem: {l.origem.toLowerCase()}
-                      {l.campanhaNome && ` (${l.campanhaNome})`} · Vence em {DATA(l.fimEm)}
-                    </span>
-                  </span>
-                  <span style={{ display: 'flex', gap: '.6rem', alignItems: 'center' }}>
-                    <span className={`pill ${vigente ? (l.origem === 'TRIAL' ? 'wave' : 'free') : 'locked'}`}>
+                    <div className="caption suave">
+                      Origem: {l.origem.toLowerCase()}{l.campanhaNome && ` (${l.campanhaNome})`} · Vence em {DATA(l.fimEm)}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <span className={`chip ${vigente ? 'chip-secundaria' : 'chip-neutra'}`}>
                       {vigente ? 'Ativa' : l.status.toLowerCase()}
                     </span>
                     {l.origem === 'TRIAL' && vigente && (
-                      <Link className="btn btn-primary btn-sm" href="/planos">Assinar matéria</Link>
+                      <Link className="btn btn-primario btn-sm" href="/planos">Assinar matéria</Link>
                     )}
-                  </span>
+                  </div>
                 </div>
               );
             })}
-            <p style={{ fontSize: '.82rem', color: 'var(--ink-soft)', marginTop: '.9rem' }}>
+            <p className="caption suave" style={{ marginTop: 14 }}>
               Licenças somam, nunca se anulam. Ao assinar o passe completo, as suas licenças de
               matéria continuam valendo até expirar.
             </p>
           </div>
 
-          <div className="panel">
-            <h2>🔁 Caderno de erros</h2>
-            {erros.length === 0 ? (
-              <div className="empty-state">
-                Você ainda não errou nenhuma questão — quando errar, ela aparece aqui para revisar.
+          <div className="cartao">
+            <h2 className="headline-md" style={{ marginBottom: 16 }}>Minha conta</h2>
+            {[
+              ['Meio de pagamento: nenhum cadastrado', 'Adicionar Pix ou cartão'],
+              ['Cancelamento de assinatura — 2 cliques, com protocolo', 'Cancelar assinatura'],
+              ['Seus dados (LGPD): acessar, corrigir, exportar ou excluir', 'Abrir meus dados'],
+            ].map(([texto, acao]) => (
+              <div key={acao} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--surface-container)', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 15 }}>{texto}</span>
+                <span className="btn btn-contorno btn-sm">{acao}</span>
               </div>
-            ) : (
-              erros.map((e) => (
-                <div className="lic-row" key={e.questaoId}>
-                  <span>
-                    {e.enunciado}
-                    <br />
-                    <span style={{ color: 'var(--ink-soft)', fontSize: '.83rem' }}>{e.aulaTitulo}</span>
-                  </span>
-                  <Link className="btn btn-outline btn-sm" href={`/aula/${e.aulaSlug}`}>Refazer</Link>
-                </div>
-              ))
-            )}
+            ))}
           </div>
-
-          <div className="panel" style={{ marginBottom: 0 }}>
-            <h2>💳 Minha conta</h2>
-            <div className="lic-row">
-              <span>Meio de pagamento: <strong>nenhum cadastrado</strong></span>
-              <span className="btn btn-outline btn-sm">Adicionar Pix ou cartão</span>
-            </div>
-            <div className="lic-row">
-              <span>Cancelamento de assinatura — 2 cliques, com protocolo</span>
-              <span className="btn btn-outline btn-sm">Cancelar assinatura</span>
-            </div>
-            <div className="lic-row" style={{ borderBottom: 0 }}>
-              <span>Seus dados (LGPD): acessar, corrigir, exportar ou excluir</span>
-              <span className="btn btn-outline btn-sm">Abrir meus dados</span>
-            </div>
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   );
