@@ -1,83 +1,100 @@
 # Aprendendo o Direito ⚖️
 
-Protótipo navegável da plataforma de ensino jurídico descrita em
-[`discovery.md`](discovery.md) — v1.0, 29/08/2026.
+Plataforma de ensino jurídico descrita em [`discovery.md`](discovery.md) (v1.0,
+29/08/2026). Este repositório é a implantação da **Fase 1 (MVP)** do roadmap §14.
 
 > Entender Direito sem precisar decorar. Aula curta, linguagem de gente, a lei
 > ao lado e um exercício no final para provar que você aprendeu.
 
-## O que este protótipo cobre
-
-Recorte do **MVP (Fase 1)** do discovery, na forma de telas navegáveis:
-
-| Tela | Arquivo | O que demonstra |
-|---|---|---|
-| Home | `site/index.html` | Proposta de valor, anatomia da aula (§5.3), vade-mécum como diferencial (§5.4), catálogo em ondas |
-| Catálogo | `site/catalogo.html` | As 7 áreas e as 11 matérias de partida (§4), com ondas de lançamento e "em breve" com lista de espera |
-| Matéria | `site/materia.html` | Assunto → aula com cadeado, 1ª aula grátis, box de licença por matéria (§6.1) |
-| Aula | `site/aula.html` | Player com marca d'água (§10), abas resumo/lei/material/anotações, **painel lateral do vade-mécum** e exercício de 5 questões com comentário em todas as alternativas (§5.3) |
-| Vade-mécum | `site/vademecum.html` | Consulta aberta, busca com atalho `/`, favoritos, deep link artigo ↔ aula, carimbo "texto conferido em" (§5.4) |
-| Planos | `site/planos.html` | Camadas de acesso (§6.1), tabela de preços por período (§7), 7 dias do CDC e cancelamento em 2 cliques (§6.6) |
-| Área do aluno | `site/app.html` | Continue de onde parou, progresso por matéria, **licenças ativas com escopo e origem** (§11), caderno de erros, conta e LGPD |
-
-Todas as telas são responsivas — o aluno é mobile-first, conforme §9.
-
-### O que ainda NÃO está no protótipo
-
-Fora do recorte, por serem Fase 2/3 no discovery ou por dependerem de backend:
-admin, painel do professor e fechamento de contas (§5.6), checkout real e
-gateway (§8), frente publicitária (§5.7), mural de vagas (§5.7.1), diagnóstico
-e plano de ensino sugerido (§5.8), autenticação, e persistência de dados.
-As interações da tela são simuladas em JavaScript, sem servidor de aplicação.
-
-## Estrutura
-
-```
-├── discovery.md                # documento de discovery (fonte da verdade)
-├── site/                       # o protótipo (HTML/CSS/JS estáticos)
-│   ├── index.html · catalogo.html · materia.html · aula.html
-│   ├── vademecum.html · planos.html · app.html
-│   ├── css/styles.css          # design system (§9: descontraído, acolhedor)
-│   └── js/app.js               # exercício, abas, busca do vade-mécum, planos
-├── tools/build-page.sh         # monta as páginas a partir dos fragmentos
-├── tools/partials/             # header e footer compartilhados
-├── Dockerfile · nginx.conf · docker-compose.yml
-```
-
-O protótipo é estático de propósito: o alvo de produção é Next.js 15 +
-PostgreSQL + Redis (§10), e estas telas servem para validar fluxo e visual
-antes de escrever o código de produto.
-
-## Rodar com Docker
+## Subir tudo
 
 ```bash
 docker compose up -d --build
 ```
 
-Abre em **http://localhost:8080**. Para parar: `docker compose down`.
+Abre em **http://localhost:3000**. O banco é criado, as migrações rodam pelo
+entrypoint e o catálogo já vem populado. Para parar: `docker compose down`
+(com `-v` para apagar também os dados).
 
-## Rodar sem Docker
-
-```bash
-cd site && python -m http.server 8080
-```
-
-## Regenerar uma página
-
-Header e footer são compartilhados via fragmentos (não há build step no
-navegador):
+Em rede corporativa com proxy que inspeciona TLS, passe a CA ao build:
 
 ```bash
-tools/build-page.sh site/planos.html "Título" "Descrição" corpo.html
+docker build --secret id=ca_bundle,src=/caminho/ca.crt -t aprendendoodireito .
 ```
 
-## Próximos passos sugeridos
+### Desenvolvimento
 
-Seguindo o roadmap do discovery (§14) e as decisões pendentes (§16):
+```bash
+docker compose up -d db                 # só o Postgres
+export DATABASE_URL=postgres://aprendendo:aprendendo@localhost:5432/aprendendoodireito
+npm install && npm run migrate && npm run dev
+npm test                                # motor de licenças
+```
 
-1. Fechar a **ordem das ondas** — quais 3 a 5 matérias abrem (decisão §16.1)
-2. Validar preço e disposição a pagar na Fase 0 antes de fixar a tabela (§7)
-3. Modelar o banco a partir de §11, com `licenca` como entidade de primeira
-   classe e testes cobrindo a matriz escopo × status × vigência (risco §15.8)
-4. Escolher o gateway pelo critério de split e Pix Automático (§8.2)
-5. Decidir o timing do fluxo de menores / consentimento parental (§16.8)
+## O que já está implementado
+
+| Área | Estado |
+|---|---|
+| **Taxonomia §4** | Área → Matéria → Assunto → Aula → Exercício no banco, com as 7 áreas e as 11 matérias do catálogo de partida |
+| **Motor de licenças §6.3** | `lib/licenca.ts` — `podeAcessar` resolvendo escopo, origem, status, vigência e cota do trial. **29 testes** cobrem a matriz de 36 combinações (mitigação do risco §15.8) |
+| **Camadas de acesso §6.1** | Aberta, trial com cota de conteúdo, licença por matéria, promocional e passe — todas somam, nunca se anulam |
+| **Anatomia da aula §5.3** | Vídeo com marca d'água por aluno, resumo, dispositivos vinculados, material e exercício. A regra "aula sem exercício não publica" é aplicada no seed |
+| **Vade-mécum §5.4** | Busca full-text em português com stemming, tolerante a acento, com apelidos indexados e deep link bidirecional aula ↔ artigo |
+| **Exercícios §5.5** | Correção imediata com comentário em todas as alternativas; respostas gravadas alimentam estatística e caderno de erros |
+| **Área do aluno §5.2** | Continue de onde parou, progresso por matéria, licenças com escopo e origem, caderno de erros |
+| **Preços §7** | Tabela por período em `lib/precos.ts`, um único lugar (vira tabela versionada quando o admin do §5.9 existir) |
+
+### O que ainda não está
+
+Autenticação (a sessão resolve um aluno fixo por `ALUNO_DEMO`), checkout e
+gateway (§8), admin (§5.9), painel do professor e fechamento de contas (§5.6),
+publicidade (§5.7), mural de vagas (§5.7.1), diagnóstico e plano de ensino
+(§5.8), hospedagem real de vídeo (§10). O player é um placeholder que já
+carrega a marca d'água com os dados do aluno.
+
+## Estrutura
+
+```
+├── discovery.md              # fonte da verdade do produto
+├── app/                      # Next.js 16 (App Router)
+│   ├── page.tsx              # home
+│   ├── catalogo/             # as 7 áreas e 11 matérias
+│   ├── materia/[slug]/       # assuntos e aulas, com cadeado por licença
+│   ├── aula/[slug]/          # player, abas, vade-mécum lateral e exercício
+│   ├── vademecum/            # consulta aberta com busca
+│   ├── planos/ · painel/     # licenças e área do aluno
+│   └── api/resposta/         # grava resposta de exercício
+├── lib/
+│   ├── licenca.ts            # motor de licenciamento (§6.3)
+│   ├── licenca.test.ts       # matriz escopo × status × vigência
+│   ├── catalogo.ts · vademecum.ts · exercicio.ts · sessao.ts
+│   ├── precos.ts · cache.ts · db.ts
+├── db/                       # migrações e seed, aplicadas em ordem
+├── scripts/migrate.mjs       # runner idempotente
+└── prototipo/                # telas estáticas iniciais (histórico)
+```
+
+## Decisões que valem registro
+
+- **Sem prerender no build.** As páginas públicas são SSR com consultas em
+  cache (`lib/cache.ts`), não SSG. Prerender exigiria banco no `docker build`,
+  o que quebra imagem e CI; o Google recebe o mesmo HTML completo.
+- **SQL puro, sem ORM.** O vade-mécum depende de `tsvector` em português e de
+  índice ponderado; escrever isso direto é mais claro que contornar um ORM.
+- **A licença é entidade de primeira classe.** `assinatura` (cobrança) e
+  `licenca` (direito de acesso) são separadas — é o que faz Pix avulso,
+  cortesia, trial, promocional e cartão recorrente coexistirem sem gambiarra.
+- **Comentário de toda alternativa vai junto com a questão.** O aluno já pagou
+  pelo conteúdo; esconder o gabarito atrás de outra requisição só somaria
+  latência. A resposta é validada no servidor (a alternativa precisa pertencer
+  à questão) para que o registro de acerto não seja forjável.
+
+## Próximos passos
+
+Do §16 (decisões pendentes) e do §14 (roadmap):
+
+1. Fechar a **ordem das ondas** — o seed adota a sugestão do §16.1, a confirmar
+2. Autenticação e, na sequência, checkout com Pix e cartão (§8)
+3. Admin de valores, licenças e cadastros (§5.9) — o §5.9 chama de coração da operação
+4. Ingestão do acervo completo do vade-mécum via LexML, com rotina de atualização
+5. Definir o timing do fluxo de menores e consentimento parental (§16.8)

@@ -1,9 +1,39 @@
-FROM nginx:1.27-alpine
+# Build multi-estágio: a imagem final leva só o standalone do Next.
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+# Em rede com proxy que inspeciona TLS (corporativa ou de CI), passe a CA:
+#   docker build --secret id=ca_bundle,src=/caminho/ca.crt .
+# Sem o secret, o passo roda normalmente.
+RUN --mount=type=secret,id=ca_bundle,target=/tmp/ca-bundle.crt \
+    if [ -f /tmp/ca-bundle.crt ]; then export NODE_EXTRA_CA_CERTS=/tmp/ca-bundle.crt; fi; \
+    npm ci --no-audit --no-fund
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY site/ /usr/share/nginx/html/
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
 
-EXPOSE 80
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget -qO- http://localhost/ >/dev/null || exit 1
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+# migrações rodam pelo entrypoint; o `pg` já vem traçado no standalone
+COPY --from=build /app/db ./db
+COPY --from=build /app/scripts ./scripts
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && chown -R nextjs:nodejs /app
+
+USER nextjs
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
+  CMD wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node", "server.js"]
