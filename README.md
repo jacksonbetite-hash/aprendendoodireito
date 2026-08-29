@@ -51,6 +51,7 @@ npm install && npm run migrate && npm run dev
 npm test          # 54 testes: licenças, senha, preços e checkout
 npm run contraste # 16 pares de cor contra o WCAG AA
 SENHA_ADMIN=... npm run e2e   # 58 verificações no navegador, com a app de pé
+#   (CHROMIUM=/caminho/chromium se o Playwright não achar o navegador)
 ```
 
 O seed traz uma conta de exemplo (`ana@exemplo.com` / `constitucional88`) com

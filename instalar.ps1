@@ -34,11 +34,31 @@ try {
   exit 1
 }
 
-Passo 'Verificando a porta 3000'
-$emUso = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
-if ($emUso) {
-  Aviso 'A porta 3000 ja esta em uso. Feche o programa que a ocupa ou edite docker-compose.yml.'
+# A porta sai do .env (PORTA_WEB), que e o que o docker-compose.yml le.
+function PortaConfigurada {
+  if ($env:PORTA_WEB) { return [int]$env:PORTA_WEB }
+  if (Test-Path .env) {
+    $linha = Select-String -Path .env -Pattern '^PORTA_WEB=(\d+)' | Select-Object -Last 1
+    if ($linha) { return [int]$linha.Matches[0].Groups[1].Value }
+  }
+  return 3000
 }
+
+function FixarPorta($valor) {  # grava no .env, para o compose e os comandos seguintes acharem
+  if (-not (Test-Path .env)) {
+    if (Test-Path .env.example) { Copy-Item .env.example .env } else { New-Item -ItemType File .env | Out-Null }
+  }
+  $texto = Get-Content .env -Raw
+  if ($texto -match '(?m)^PORTA_WEB=') {
+    ($texto -replace '(?m)^PORTA_WEB=.*', "PORTA_WEB=$valor") | Set-Content .env -NoNewline
+  } else {
+    Add-Content .env "PORTA_WEB=$valor"
+  }
+  $env:PORTA_WEB = "$valor"
+}
+
+$porta = PortaConfigurada
+$env:PORTA_WEB = "$porta"
 
 Passo 'Construindo a imagem (a primeira vez leva alguns minutos)'
 # Em rede que inspeciona TLS (corporativa), aponte a CA antes de rodar:
@@ -52,15 +72,38 @@ if ($env:CA_BUNDLE) {
 if ($LASTEXITCODE -ne 0) { throw 'A construcao da imagem falhou.' }
 Ok 'Imagem pronta.'
 
-Passo 'Subindo banco e aplicacao'
-docker compose up -d
-if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel subir os servicos.' }
+Passo "Subindo banco e aplicacao (porta $porta)"
+# Se outro programa ja ocupa a porta, procura a proxima livre em vez de
+# encerrar: quem instala quer o sistema no ar, nao uma licao sobre portas.
+# O compose escreve o progresso no stderr; capturar em arquivo evita que o
+# PowerShell trate isso como erro terminante ($ErrorActionPreference = 'Stop').
+$log = [System.IO.Path]::GetTempFileName()
+docker compose up -d 2> $log
+if ($LASTEXITCODE -ne 0) {
+  $texto = (Get-Content $log -Raw -ErrorAction SilentlyContinue)
+  if ($texto -match 'already allocated|address already in use|Bind for') {
+    $nova = $null
+    foreach ($p in ($porta + 1)..($porta + 20)) {
+      if (-not (Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue)) { $nova = $p; break }
+    }
+    if (-not $nova) { Write-Host $texto -ForegroundColor Red; throw 'Nao foi possivel subir os servicos.' }
+    Aviso "A porta $porta esta ocupada por outro programa; usando a $nova."
+    FixarPorta $nova
+    $porta = $nova
+    docker compose up -d
+    if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel subir os servicos.' }
+  } else {
+    Write-Host $texto -ForegroundColor Red
+    throw 'Nao foi possivel subir os servicos.'
+  }
+}
+Remove-Item $log -ErrorAction SilentlyContinue
 
 Passo 'Esperando a aplicacao responder'
 $pronto = $false
 foreach ($i in 1..60) {
   try {
-    $r = Invoke-WebRequest -Uri 'http://localhost:3000/' -UseBasicParsing -TimeoutSec 3
+    $r = Invoke-WebRequest -Uri "http://localhost:$porta/" -UseBasicParsing -TimeoutSec 3
     if ($r.StatusCode -eq 200) { $pronto = $true; break }
   } catch { Start-Sleep -Seconds 2 }
 }
@@ -92,9 +135,9 @@ Write-Host @"
   ============================================================
    Aprendendo o Direito esta rodando
 
-   Site e sistema .... http://localhost:3000
-   Area do aluno ..... http://localhost:3000/painel
-   Administracao ..... http://localhost:3000/admin
+   Site e sistema .... http://localhost:$porta
+   Area do aluno ..... http://localhost:$porta/painel
+   Administracao ..... http://localhost:$porta/admin
 
    Conta de exemplo (dados de demonstracao):
      ana@exemplo.com / constitucional88
@@ -106,4 +149,4 @@ Write-Host @"
 
 "@ -ForegroundColor Green
 
-Start-Process 'http://localhost:3000'
+Start-Process "http://localhost:$porta"

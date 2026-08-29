@@ -120,9 +120,16 @@ docker compose build; docker compose up -d   # aplicar mudanças no código
 O Docker Desktop não está aberto ou terminou de iniciar. Abra e espere
 "Engine running".
 
-**"port is already allocated" na 3000**
-Outro programa ocupa a porta. Feche-o, ou edite `docker-compose.yml` e troque
-`"3000:3000"` por `"3001:3000"` (o endereço vira `localhost:3001`).
+**A porta 3000 já está em uso**
+O `instalar.ps1` resolve sozinho: procura a primeira porta livre a partir da
+3001, grava `PORTA_WEB` no `.env` e avisa qual endereço usar. Para escolher a
+porta você mesmo, antes de rodar:
+
+```powershell
+Copy-Item .env.example .env -ErrorAction SilentlyContinue
+Add-Content .env "PORTA_WEB=3001"
+.\instalar.ps1
+```
 
 **A build falha em `npm ci` com erro de certificado**
 Sua rede inspeciona HTTPS (comum em rede corporativa). Exporte a CA da sua
