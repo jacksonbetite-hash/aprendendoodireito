@@ -2,6 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Pagina } from '../componentes.tsx';
 import { listarAreasEmCache, listarMateriasEmCache } from '../../lib/catalogo.ts';
+import { brl } from '../../lib/precos.ts';
+import { tabelaVigente } from '../../lib/precos-consultas.ts';
 
 export const metadata: Metadata = {
   title: 'Matérias',
@@ -13,7 +15,9 @@ const ROTULO_ONDA = (onda: number | null) =>
   onda === null ? 'Em breve' : onda === 1 ? '1ª onda' : `${onda}ª onda`;
 
 export default async function Catalogo() {
-  const [areas, materias] = await Promise.all([listarAreasEmCache(), listarMateriasEmCache()]);
+  const [areas, materias, tabela] = await Promise.all([
+    listarAreasEmCache(), listarMateriasEmCache(), tabelaVigente(),
+  ]);
 
   return (
     <Pagina>
@@ -75,7 +79,7 @@ export default async function Catalogo() {
                         <p className="ementa">{m.ementa}</p>
                         <div className="foot">
                           <span>{m.aulasPublicadas} aulas · {m.questoes} questões</span>
-                          <span>R$ 24,90/mês</span>
+                          <span>{brl(tabela.MATERIA.mensal)}/mês</span>
                         </div>
                       </Link>
                     );

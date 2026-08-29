@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { alunoAtual } from '../lib/sessao.ts';
+import { sair } from './acoes-auth.ts';
 
 export function Marca({ claro = false }: { claro?: boolean }) {
   return (
@@ -8,7 +10,8 @@ export function Marca({ claro = false }: { claro?: boolean }) {
   );
 }
 
-export function Cabecalho() {
+export async function Cabecalho() {
+  const aluno = await alunoAtual();
   return (
     <header className="site-header">
       <div className="container nav">
@@ -19,8 +22,22 @@ export function Cabecalho() {
           <Link href="/planos">Planos</Link>
         </nav>
         <div className="nav-cta">
-          <Link className="btn btn-outline btn-sm" href="/painel">Entrar</Link>
-          <Link className="btn btn-primary btn-sm" href="/planos">Testar 7 dias grátis</Link>
+          {aluno ? (
+            <>
+              {aluno.papel === 'admin' && (
+                <Link className="btn btn-outline btn-sm" href="/admin">Admin</Link>
+              )}
+              <Link className="btn btn-outline btn-sm" href="/painel">Meu painel</Link>
+              <form action={sair}>
+                <button className="btn-sair" type="submit">Sair</button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link className="btn btn-outline btn-sm" href="/entrar">Entrar</Link>
+              <Link className="btn btn-primary btn-sm" href="/cadastrar">Criar conta grátis</Link>
+            </>
+          )}
         </div>
       </div>
     </header>
@@ -62,7 +79,7 @@ export function Rodape() {
   );
 }
 
-export function Pagina({ children }: { children: React.ReactNode }) {
+export async function Pagina({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Cabecalho />

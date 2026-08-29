@@ -1,0 +1,74 @@
+import type { Metadata } from 'next';
+import FormConceder from './FormConceder.tsx';
+import { acaoConcederLicenca, acaoEstender, acaoSuspender } from '../acoes.ts';
+import { listarLicencas, listarAlunos, listarMateriasSimples } from '../../../lib/admin.ts';
+
+export const metadata: Metadata = { title: 'Licenças — Administração' };
+
+const DATA = (d: Date) => new Date(d).toLocaleDateString('pt-BR');
+
+export default async function Licencas() {
+  const [licencas, alunos, materias] = await Promise.all([
+    listarLicencas(), listarAlunos('', 200), listarMateriasSimples(),
+  ]);
+
+  return (
+    <>
+      <h1>Licenças</h1>
+      <p className="sub">
+        Conceder cortesia, estender e suspender. Toda ação fica registrada na auditoria.
+      </p>
+
+      <div className="panel">
+        <h2>Conceder cortesia</h2>
+        <FormConceder acao={acaoConcederLicenca} alunos={alunos} materias={materias} />
+      </div>
+
+      <div className="panel" style={{ marginBottom: 0 }}>
+        <h2>Licenças emitidas</h2>
+        <table className="tabela">
+          <thead>
+            <tr>
+              <th>Aluno</th><th>Escopo</th><th>Origem</th><th>Vigência</th>
+              <th>Situação</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {licencas.map((l) => (
+              <tr key={l.id}>
+                <td>
+                  <strong>{l.usuarioNome}</strong>
+                  <br /><span className="suave">{l.usuarioEmail}</span>
+                </td>
+                <td>{l.escopo === 'CATALOGO' ? 'Passe completo' : l.materiaNome}</td>
+                <td><span className="pill">{l.origem.toLowerCase()}</span></td>
+                <td className="suave nowrap">{DATA(l.inicioEm)} → {DATA(l.fimEm)}</td>
+                <td>
+                  <span className={`pill ${l.vigente ? 'free' : 'locked'}`}>
+                    {l.vigente ? 'vigente' : l.status.toLowerCase()}
+                  </span>
+                </td>
+                <td>
+                  <div className="acoes-linha">
+                    <form action={acaoEstender}>
+                      <input type="hidden" name="licencaId" value={l.id} />
+                      <input type="hidden" name="dias" value="30" />
+                      <button className="btn btn-outline btn-sm" type="submit">+30 dias</button>
+                    </form>
+                    <form action={acaoSuspender}>
+                      <input type="hidden" name="licencaId" value={l.id} />
+                      <input type="hidden" name="status" value={l.status === 'SUSPENSA' ? 'ATIVA' : 'SUSPENSA'} />
+                      <button className="btn btn-outline btn-sm" type="submit">
+                        {l.status === 'SUSPENSA' ? 'Reativar' : 'Suspender'}
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}

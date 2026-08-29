@@ -1,29 +1,44 @@
 /**
- * Tabela de preços — §7 do discovery.
- * "Hipótese inicial e precisa de teste de disposição a pagar na Fase 0."
- * Fica em um único lugar porque o §5.9 prevê tabela versionada no admin:
- * quando o admin existir, isto vira leitura da tabela `preco` com vigência.
+ * Preços — parte pura, sem acesso a banco.
+ *
+ * Este módulo é importado por componente cliente (o seletor de período da
+ * página de planos). Nada aqui pode tocar o banco, senão o driver do
+ * Postgres vai parar no bundle do navegador. As consultas ficam em
+ * `precos-consultas.ts`, que só o servidor importa.
+ *
+ * A tabela em si é definida em §7 do discovery e mora no banco por
+ * exigência do §5.9 (vigência e histórico).
  */
 export type Periodo = 'mensal' | 'trimestral' | 'semestral' | 'anual';
+export type Produto = 'MATERIA' | 'CATALOGO';
 
+export const PERIODOS: Periodo[] = ['mensal', 'trimestral', 'semestral', 'anual'];
 export const MESES: Record<Periodo, number> = {
   mensal: 1, trimestral: 3, semestral: 6, anual: 12,
 };
 
-export const PRECOS: Record<Periodo, { materia: number; passe: number }> = {
-  mensal:     { materia: 24.9,  passe: 59.9 },
-  trimestral: { materia: 59.9,  passe: 149.9 },
-  semestral:  { materia: 99.9,  passe: 269.9 },
-  anual:      { materia: 169.9, passe: 449.9 },
-};
+export interface LinhaPreco {
+  id: number; produto: Produto; periodo: Periodo; centavos: number;
+  // node-pg converte DATE em Date — não em string. Tipar como string
+  // fazia a formatação quebrar em produção e passar batido no build.
+  vigenteDe: Date; vigenteAte: Date | null; criadoPor: string;
+}
 
-export const brl = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+/** Data de vigência no formato brasileiro, tolerante a nulo. */
+export const dataBR = (d: Date | string | null) =>
+  d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—';
 
-export const porMes = (valor: number, periodo: Periodo) => valor / MESES[periodo];
+export type Tabela = Record<Produto, Record<Periodo, number>>;
 
-/** Economia do período longo contra pagar o mensal 12 vezes. */
-export function economiaAnual(produto: 'materia' | 'passe'): number {
-  const doze = PRECOS.mensal[produto] * 12;
-  return Math.round(((doze - PRECOS.anual[produto]) / doze) * 100);
+export const brl = (centavos: number) =>
+  (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+export const porMes = (centavos: number, periodo: Periodo) => centavos / MESES[periodo];
+
+export function economia(tabela: Tabela, produto: Produto, periodo: Periodo): number {
+  const mensal = tabela[produto].mensal;
+  const total = tabela[produto][periodo];
+  if (!mensal || !total || periodo === 'mensal') return 0;
+  const cheio = mensal * MESES[periodo];
+  return Math.round(((cheio - total) / cheio) * 100);
 }

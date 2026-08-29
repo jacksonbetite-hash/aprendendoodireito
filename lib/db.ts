@@ -1,10 +1,14 @@
-import { Pool } from 'pg';
+// `pg` é CommonJS: importação nomeada funciona no bundler do Next, mas
+// quebra no Node puro (que os testes usam). O default serve aos dois.
+import pg from 'pg';
+import type { Pool as TipoPool } from 'pg';
+const { Pool } = pg;
 
 /**
  * Pool único por processo. Em dev o Next recarrega o módulo a cada
  * alteração, então guardamos no globalThis para não vazar conexões.
  */
-const globalForDb = globalThis as unknown as { _pool?: Pool };
+const globalForDb = globalThis as unknown as { _pool?: TipoPool };
 
 export const pool =
   globalForDb._pool ??

@@ -6,6 +6,8 @@ import {
   buscarMateria, listarAulasDaMateria, listarMaterias, formatarDuracao,
 } from '../../../lib/catalogo.ts';
 import { espectadorAtual } from '../../../lib/sessao.ts';
+import { brl, porMes } from '../../../lib/precos.ts';
+import { tabelaVigente } from '../../../lib/precos-consultas.ts';
 import { podeAcessar } from '../../../lib/licenca.ts';
 
 export const dynamic = 'force-dynamic';  // o cadeado depende da licença de quem olha
@@ -24,9 +26,10 @@ export default async function PaginaMateria({ params }: { params: Promise<{ slug
   const materia = await buscarMateria(slug);
   if (!materia) notFound();
 
-  const [aulas, espectador] = await Promise.all([
+  const [aulas, espectador, tabela] = await Promise.all([
     listarAulasDaMateria(materia.id),
     espectadorAtual(),
+    tabelaVigente(),
   ]);
 
   const publicadas = aulas.filter((a) => a.status === 'publicado');
@@ -117,10 +120,10 @@ export default async function PaginaMateria({ params }: { params: Promise<{ slug
               Licença desta matéria
             </div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--brand-900)' }}>
-              R$ 24,90<small style={{ fontSize: '.9rem', fontFamily: 'var(--font-body)', color: 'var(--ink-soft)', fontWeight: 600 }}>/mês</small>
+              {brl(tabela.MATERIA.mensal)}<small style={{ fontSize: '.9rem', fontFamily: 'var(--font-body)', color: 'var(--ink-soft)', fontWeight: 600 }}>/mês</small>
             </div>
             <p style={{ fontSize: '.82rem', color: 'var(--ink-soft)', marginBottom: '1.1rem' }}>
-              ou R$ 169,90 no plano anual (R$ 14,16/mês)
+              ou {brl(tabela.MATERIA.anual)} no plano anual ({brl(porMes(tabela.MATERIA.anual, 'anual'))}/mês)
             </p>
             <Link className="btn btn-primary" style={{ width: '100%', marginBottom: '.6rem' }} href="/planos">
               Assinar esta matéria

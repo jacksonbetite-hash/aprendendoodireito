@@ -2,14 +2,18 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Pagina } from '../componentes.tsx';
 import SeletorPeriodo from './SeletorPeriodo.tsx';
-import { economiaAnual } from '../../lib/precos.ts';
+import { economia } from '../../lib/precos.ts';
+import { tabelaVigente } from '../../lib/precos-consultas.ts';
 
 export const metadata: Metadata = {
   title: 'Planos e licenças',
   description: 'Licença por matéria ou passe completo, teste de 7 dias sem cartão, Pix ou cartão e cancelamento em 2 cliques.',
 };
 
-export default function Planos() {
+export const dynamic = 'force-dynamic';
+
+export default async function Planos() {
+  const tabela = await tabelaVigente();
   return (
     <Pagina>
       <section className="materia-hero">
@@ -25,7 +29,7 @@ export default function Planos() {
 
       <section className="section" style={{ paddingTop: '2.5rem' }}>
         <div className="container">
-          <SeletorPeriodo economia={economiaAnual('passe')} />
+          <SeletorPeriodo tabela={tabela} economiaAnual={economia(tabela, 'CATALOGO', 'anual')} />
           <p style={{ textAlign: 'center', fontSize: '.85rem', color: 'var(--ink-soft)', marginTop: '1.4rem' }}>
             Preços de referência — hipótese a validar antes do lançamento.
           </p>

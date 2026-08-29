@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { PRECOS, MESES, brl, porMes, type Periodo } from '../../lib/precos.ts';
+import { MESES, PERIODOS, brl, porMes, type Periodo, type Tabela } from '../../lib/precos.ts';
 
-const PERIODOS: Periodo[] = ['mensal', 'trimestral', 'semestral', 'anual'];
-
-export default function SeletorPeriodo({ economia }: { economia: number }) {
+export default function SeletorPeriodo(
+  { tabela, economiaAnual }: { tabela: Tabela; economiaAnual: number },
+) {
   const [periodo, setPeriodo] = useState<Periodo>('mensal');
-  const p = PRECOS[periodo];
+  const materia = tabela.MATERIA[periodo];
+  const passe = tabela.CATALOGO[periodo];
 
   const legenda = (valor: number) =>
     periodo === 'mensal'
@@ -26,7 +27,7 @@ export default function SeletorPeriodo({ economia }: { economia: number }) {
               onClick={() => setPeriodo(per)}
             >
               {per[0].toUpperCase() + per.slice(1)}
-              {per === 'anual' && ` · economize ${economia}%`}
+              {per === 'anual' && ` · economize ${economiaAnual}%`}
             </button>
           ))}
         </div>
@@ -52,8 +53,8 @@ export default function SeletorPeriodo({ economia }: { economia: number }) {
           <span className="badge">Mais escolhido</span>
           <div className="name">Matéria avulsa</div>
           <p className="desc">Uma matéria completa, do início ao fim.</p>
-          <div className="price">{brl(p.materia)}</div>
-          <p className="per">{legenda(p.materia)}</p>
+          <div className="price">{brl(materia)}</div>
+          <p className="per">{legenda(materia)}</p>
           <ul>
             <li>Todas as aulas da matéria</li>
             <li>Todos os exercícios e simulados dela</li>
@@ -68,8 +69,8 @@ export default function SeletorPeriodo({ economia }: { economia: number }) {
         <div className="plan">
           <div className="name">Passe completo</div>
           <p className="desc">Todas as matérias publicadas — e as que forem lançadas na sua vigência.</p>
-          <div className="price">{brl(p.passe)}</div>
-          <p className="per">{legenda(p.passe)}</p>
+          <div className="price">{brl(passe)}</div>
+          <p className="per">{legenda(passe)}</p>
           <ul>
             <li>Tudo das matérias avulsas</li>
             <li>Matérias novas liberadas automaticamente</li>

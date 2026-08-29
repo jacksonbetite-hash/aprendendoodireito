@@ -1,28 +1,44 @@
+import { cookies } from 'next/headers';
 import { query, queryOne } from './db.ts';
+import { usuarioPorToken, COOKIE_SESSAO, type UsuarioSessao } from './auth.ts';
 import type { Espectador, Licenca, StatusConta } from './licenca.ts';
 
 /**
- * Sessão do aluno.
+ * Sessão do aluno, resolvida pelo cookie assinado (ver lib/auth.ts).
  *
- * Autenticação real (e-mail+senha, magic link, Google, 2FA para admin —
- * §10) ainda não está implementada. Até lá, a sessão é resolvida por um
- * e-mail fixo em variável de ambiente, para que todas as telas já leiam
- * o aluno do banco e passem pelo mesmo `podeAcessar`. Trocar isto por
- * um cookie assinado não muda nenhuma outra camada.
+ * `ALUNO_DEMO` ainda existe como atalho de desenvolvimento: quando
+ * definido E não houver cookie, resolve aquele e-mail. Em produção
+ * (NODE_ENV=production) o atalho é ignorado — nunca queremos uma
+ * variável de ambiente abrindo a conta de alguém.
  */
-const EMAIL_DEMO = process.env.ALUNO_DEMO ?? 'ana@exemplo.com';
-
 export interface Aluno {
   id: number; nome: string; email: string;
-  statusConta: StatusConta; ultimoLoginEm: Date | null;
+  papel: UsuarioSessao['papel'];
+  statusConta: StatusConta;
 }
 
 export async function alunoAtual(): Promise<Aluno | null> {
-  return queryOne<Aluno>(
-    `SELECT id, nome, email, status_conta AS "statusConta", ultimo_login_em AS "ultimoLoginEm"
-       FROM usuario WHERE email = $1`,
-    [EMAIL_DEMO],
-  );
+  const token = (await cookies()).get(COOKIE_SESSAO)?.value;
+  if (token) {
+    const u = await usuarioPorToken(token);
+    if (u) return u as Aluno;
+  }
+
+  const demo = process.env.ALUNO_DEMO;
+  if (demo && process.env.NODE_ENV !== 'production') {
+    return queryOne<Aluno>(
+      `SELECT id, nome, email, papel, status_conta AS "statusConta"
+         FROM usuario WHERE lower(email) = lower($1)`,
+      [demo],
+    );
+  }
+  return null;
+}
+
+/** Para telas de admin: exige o papel, não só estar logado. */
+export async function exigirAdmin(): Promise<Aluno | null> {
+  const u = await alunoAtual();
+  return u && u.papel === 'admin' ? u : null;
 }
 
 interface LinhaLicenca {

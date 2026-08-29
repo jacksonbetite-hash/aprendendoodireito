@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Marca } from '../componentes.tsx';
+import { sair } from '../acoes-auth.ts';
 import {
   alunoAtual, licencasDo, progressoPorMateria, continuarDeOndeParou,
   estatisticas, cadernoDeErros,
@@ -13,20 +15,13 @@ export const dynamic = 'force-dynamic';
 
 const DATA = (d: Date) => new Date(d).toLocaleDateString('pt-BR');
 
-export default async function Painel() {
+export default async function Painel(
+  { searchParams }: { searchParams: Promise<{ 'sem-acesso'?: string; bemvindo?: string }> },
+) {
+  const busca = await searchParams;
   const aluno = await alunoAtual();
 
-  if (!aluno) {
-    return (
-      <main className="container" style={{ padding: '4rem 0' }}>
-        <h1>Entre para ver seu painel</h1>
-        <p style={{ color: 'var(--ink-soft)', margin: '.6rem 0 1.4rem' }}>
-          A autenticação (e-mail, magic link e Google) entra junto com o checkout.
-        </p>
-        <Link className="btn btn-primary" href="/">Voltar ao início</Link>
-      </main>
-    );
-  }
+  if (!aluno) redirect('/entrar?destino=/painel');
 
   const [licencas, progresso, continuar, stats, erros] = await Promise.all([
     licencasDo(aluno.id), progressoPorMateria(aluno.id), continuarDeOndeParou(aluno.id),
@@ -52,10 +47,26 @@ export default async function Painel() {
           <div className="side-link">🔁 Caderno de erros</div>
           <Link className="side-link" href="/vademecum">📖 Vade-mécum</Link>
           <div className="side-link">💳 Minha conta</div>
+          {aluno.papel === 'admin' && (
+            <Link className="side-link" href="/admin">⚙ Administração</Link>
+          )}
+          <form action={sair} style={{ marginTop: 'auto' }}>
+            <button className="side-link botao-side" type="submit">🚪 Sair</button>
+          </form>
         </aside>
 
         <main className="app-main">
           <h1>Oi, {aluno.nome.split(' ')[0]} 👋</h1>
+          {busca['sem-acesso'] && (
+            <p className="alerta-erro" role="alert" style={{ marginBottom: '1rem' }}>
+              Sua conta não tem acesso à administração.
+            </p>
+          )}
+          {busca.bemvindo && (
+            <p className="alerta-ok" role="status" style={{ marginBottom: '1rem' }}>
+              Conta criada! Comece pela 1ª aula de cada assunto — ela é aberta — ou ative seu teste de 7 dias.
+            </p>
+          )}
           <p className="sub">
             {diasDeTrial !== null
               ? `Seu teste gratuito termina em ${diasDeTrial} ${diasDeTrial === 1 ? 'dia' : 'dias'}.`
