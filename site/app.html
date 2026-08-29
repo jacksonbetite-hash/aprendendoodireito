@@ -1,105 +1,117 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel do Aluno — Aprendendo o Direito</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do aluno — Aprendendo o Direito</title>
+<meta name="description" content="Continue de onde parou, progresso por matéria, licenças ativas e caderno de erros.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="app-body">
-
 <div class="app-shell">
   <aside class="sidebar">
     <a class="brand" href="index.html"><span class="mark">§</span> Aprendendo <em>o Direito</em></a>
     <div class="side-link active">🏠 Início</div>
-    <div class="side-link">🗺 Minhas trilhas</div>
-    <div class="side-link">✍ Questões</div>
-    <div class="side-link">📜 Jurisprudência</div>
-    <div class="side-link">🃏 Flashcards</div>
-    <div class="side-link">🎯 Simulados</div>
-    <div class="side-link" style="margin-top:auto">⚙ Configurações</div>
+    <a class="side-link" href="materia.html">📚 Minhas matérias</a>
+    <div class="side-link">✍️ Exercícios</div>
+    <div class="side-link">🔁 Caderno de erros</div>
+    <a class="side-link" href="vademecum.html">📖 Vade-mécum</a>
+    <div class="side-link">⭐ Favoritos e anotações</div>
+    <div class="side-link">💳 Minha conta</div>
   </aside>
 
   <main class="app-main">
-    <h1>Bom dia, estudante! 👋</h1>
-    <p class="sub">Você está a 3 módulos de concluir a trilha de Direito Constitucional.</p>
+    <h1>Oi, Ana 👋</h1>
+    <p class="sub">Você está no 5º dia do teste grátis. Faltam 2 dias.</p>
+
+    <a class="continue-card" href="aula.html">
+      <span class="thumb">▶</span>
+      <div class="info">
+        <div class="k">Continue de onde parou</div>
+        <h2>Aula 03 — Direitos fundamentais: o que são, na prática</h2>
+        <div class="bar"><i></i></div>
+        <p style="font-size:.82rem; opacity:.85; margin-top:.4rem">7min26 de 11min42 · Noções de Direito Constitucional</p>
+      </div>
+      <span class="btn btn-coral">Retomar aula</span>
+    </a>
 
     <div class="stat-row">
-      <div class="stat"><strong>72%</strong><span>Trilha atual concluída</span></div>
-      <div class="stat"><strong>148</strong><span>Questões resolvidas este mês</span></div>
-      <div class="stat"><strong>12 dias</strong><span>Sequência de estudos 🔥</span></div>
+      <div class="stat"><strong>4 de 22</strong><span>aulas concluídas na matéria</span></div>
+      <div class="stat"><strong>28</strong><span>exercícios respondidos · 79% de acerto</span></div>
+      <div class="stat"><strong>5 dias</strong><span>estudando em sequência</span></div>
     </div>
 
     <div class="panel">
-      <h2>Trilha — Direito Constitucional</h2>
-      <div class="trilha-item done">
-        <div class="dot">✓</div>
-        <div class="info">
-          <strong>Teoria da Constituição</strong>
-          <span>6 módulos · 42 questões</span>
-        </div>
-        <span class="pill ok">Concluído</span>
+      <h2>Seu progresso</h2>
+      <div class="prog-row">
+        <span class="nome">Noções de Direito Constitucional</span>
+        <span class="bar"><i style="width:18%"></i></span>
+        <span class="pct">18%</span>
       </div>
-      <div class="trilha-item done">
-        <div class="dot">✓</div>
-        <div class="info">
-          <strong>Princípios Fundamentais</strong>
-          <span>4 módulos · 38 questões</span>
-        </div>
-        <span class="pill ok">Concluído</span>
+      <div class="prog-row">
+        <span class="nome">Introdução ao Direito</span>
+        <span class="bar"><i style="width:0%"></i></span>
+        <span class="pct">0%</span>
       </div>
-      <div class="trilha-item current">
-        <div class="dot">3</div>
-        <div class="info">
-          <strong>Direitos e Garantias Fundamentais</strong>
-          <span>8 módulos · 64 questões · art. 5º ao 17 da CF/88</span>
-        </div>
-        <span class="pill now">Em andamento</span>
-      </div>
-      <div class="trilha-item">
-        <div class="dot">4</div>
-        <div class="info">
-          <strong>Organização do Estado</strong>
-          <span>7 módulos · 50 questões</span>
-        </div>
-        <span class="pill">Bloqueado</span>
-      </div>
-      <div class="trilha-item">
-        <div class="dot">5</div>
-        <div class="info">
-          <strong>Controle de Constitucionalidade</strong>
-          <span>9 módulos · 71 questões</span>
-        </div>
-        <span class="pill">Bloqueado</span>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>✍ Questão do dia — OAB · Direito Constitucional</h2>
-      <p style="font-size:0.95rem; margin-bottom:1rem">
-        Sobre os direitos e garantias fundamentais previstos na Constituição
-        Federal de 1988, assinale a alternativa <strong>correta</strong>:
+      <p style="font-size:.85rem; color:var(--ink-soft); margin-top:.8rem">
+        Acerto por assunto: <strong>Direitos fundamentais 86%</strong> ·
+        <strong>A Constituição e o Estado 71%</strong>
       </p>
-      <button class="q-option" data-correct="false">
-        A) Os direitos fundamentais podem ser abolidos por emenda constitucional aprovada por três quintos do Congresso Nacional.
-      </button>
-      <button class="q-option" data-correct="true">
-        B) Os direitos e garantias individuais constituem cláusulas pétreas e não podem ser objeto de emenda tendente a aboli-los.
-      </button>
-      <button class="q-option" data-correct="false">
-        C) As normas definidoras de direitos fundamentais dependem sempre de regulamentação legal para produzir efeitos.
-      </button>
-      <button class="q-option" data-correct="false">
-        D) Os tratados internacionais de direitos humanos sempre ingressam no ordenamento com status de emenda constitucional.
-      </button>
-      <p class="q-feedback" id="feedback"></p>
+    </div>
+
+    <div class="panel">
+      <h2>Suas licenças</h2>
+      <div class="lic-row">
+        <span>
+          <strong>Teste gratuito</strong> — Noções de Direito Constitucional<br>
+          <span style="color:var(--ink-soft); font-size:.83rem">Escopo: matéria · Origem: trial · Vence em 03/09/2026</span>
+        </span>
+        <span style="display:flex; gap:.6rem; align-items:center">
+          <span class="pill wave">Ativa</span>
+          <a class="btn btn-primary btn-sm" href="planos.html">Assinar matéria</a>
+        </span>
+      </div>
+      <div class="lic-row">
+        <span>
+          <strong>Cortesia de lançamento</strong> — Introdução ao Direito<br>
+          <span style="color:var(--ink-soft); font-size:.83rem">Escopo: matéria · Origem: promocional (código BEMVINDA) · Vence em 28/09/2026</span>
+        </span>
+        <span class="pill free">Ativa</span>
+      </div>
+      <p style="font-size:.82rem; color:var(--ink-soft); margin-top:.9rem">
+        Licenças somam, nunca se anulam. Ao assinar o passe completo, as suas licenças
+        de matéria continuam valendo até expirar.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>🔁 Caderno de erros</h2>
+      <div class="empty-state">
+        Você errou 6 questões até agora — todas já refeitas e acertadas. 👏<br>
+        Quando errar de novo, a questão aparece aqui para você tentar outra vez.
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:0">
+      <h2>💳 Minha conta</h2>
+      <div class="lic-row">
+        <span>Meio de pagamento: <strong>nenhum cadastrado</strong> (teste sem cartão)</span>
+        <button class="btn btn-outline btn-sm">Adicionar Pix ou cartão</button>
+      </div>
+      <div class="lic-row">
+        <span>Cancelamento de assinatura — leva 2 cliques e gera protocolo</span>
+        <button class="btn btn-outline btn-sm">Cancelar assinatura</button>
+      </div>
+      <div class="lic-row" style="border-bottom:0">
+        <span>Seus dados (LGPD): acessar, corrigir, exportar ou excluir</span>
+        <button class="btn btn-outline btn-sm">Abrir meus dados</button>
+      </div>
     </div>
   </main>
 </div>
-
 <script src="js/app.js"></script>
 </body>
 </html>

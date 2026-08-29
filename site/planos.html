@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planos e licenças — Aprendendo o Direito</title>
+<meta name="description" content="Licença por matéria ou passe completo, teste de 7 dias sem cartão, Pix ou cartão e cancelamento em 2 cliques.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="index.html"><span class="mark">§</span> Aprendendo <em>o Direito</em></a>
+    <nav class="nav-links">
+      <a href="catalogo.html">Matérias</a>
+      <a href="vademecum.html">Vade-mécum</a>
+      <a href="planos.html">Planos</a>
+      <a href="index.html#como-funciona">Como funciona</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-outline btn-sm" href="app.html">Entrar</a>
+      <a class="btn btn-primary btn-sm" href="planos.html">Testar 7 dias grátis</a>
+    </div>
+  </div>
+</header>
+<section class="materia-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Início</a> › Planos</div>
+    <h1>Escolha o que você vai estudar — e pague só por isso</h1>
+    <p class="sub">
+      A licença é por matéria. Se for estudar várias, o passe completo sai mais em
+      conta. Tudo o que está escrito aqui é o que vale na hora da compra.
+    </p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:2.5rem">
+  <div class="container">
+
+    <div style="text-align:center">
+      <div class="toggle-period" id="toggle-periodo">
+        <button data-p="mensal" class="active">Mensal</button>
+        <button data-p="trimestral">Trimestral</button>
+        <button data-p="semestral">Semestral</button>
+        <button data-p="anual">Anual · economize 43%</button>
+      </div>
+    </div>
+
+    <div class="plan-grid">
+      <div class="plan">
+        <div class="name">Teste grátis</div>
+        <p class="desc">Para conhecer antes de decidir.</p>
+        <div class="price">R$ 0</div>
+        <p class="per">7 dias · sem cartão de crédito</p>
+        <ul>
+          <li>1 matéria à sua escolha</li>
+          <li>Cerca de 20% das aulas</li>
+          <li>Até 30 exercícios</li>
+          <li class="no">Material para download</li>
+          <li class="no">Certificado de curso livre</li>
+        </ul>
+        <a class="btn btn-outline" href="app.html">Começar teste</a>
+      </div>
+
+      <div class="plan featured">
+        <span class="badge">Mais escolhido</span>
+        <div class="name">Matéria avulsa</div>
+        <p class="desc">Uma matéria completa, do início ao fim.</p>
+        <div class="price" data-preco-materia>R$ 24,90</div>
+        <p class="per" data-periodo-label>por mês, renovação automática</p>
+        <ul>
+          <li>Todas as aulas da matéria</li>
+          <li>Todos os exercícios e simulados dela</li>
+          <li>Material de apoio para download</li>
+          <li>Vade-mécum dentro da aula</li>
+          <li>Caderno de erros e anotações</li>
+          <li>Sem anúncios</li>
+        </ul>
+        <a class="btn btn-primary" href="catalogo.html">Escolher matéria</a>
+      </div>
+
+      <div class="plan">
+        <div class="name">Passe completo</div>
+        <p class="desc">Todas as matérias publicadas — e as que forem lançadas na sua vigência.</p>
+        <div class="price" data-preco-passe>R$ 59,90</div>
+        <p class="per" data-periodo-label>por mês, renovação automática</p>
+        <ul>
+          <li>Tudo das matérias avulsas</li>
+          <li>Matérias novas liberadas automaticamente</li>
+          <li>Simulados cronometrados</li>
+          <li>Estatística de acerto por assunto</li>
+          <li>Sem anúncios</li>
+        </ul>
+        <a class="btn btn-outline" href="app.html">Assinar passe</a>
+      </div>
+    </div>
+
+    <p style="text-align:center; font-size:.85rem; color:var(--ink-soft); margin-top:1.4rem">
+      Preços de referência do protótipo — hipótese a validar antes do lançamento.
+    </p>
+  </div>
+</section>
+
+<section class="section tint">
+  <div class="container">
+    <div class="section-head">
+      <div class="kicker">Camadas de acesso</div>
+      <h2>O que dá para fazer sem pagar nada</h2>
+      <p>Boa parte da plataforma é aberta. Isso não é isca: é o conteúdo que traz gente para cá.</p>
+    </div>
+    <div class="grid-4">
+      <div class="card">
+        <div class="icon mint">🔓</div>
+        <h3>Sem cadastro</h3>
+        <p>Blog, glossário, ementas de todas as matérias, <strong>vade-mécum completo</strong> e a 1ª aula de cada assunto.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🎁</div>
+        <h3>Teste de 7 dias</h3>
+        <p>Uma matéria, ~20% das aulas, até 30 exercícios. Um por CPF, sem cartão, sem renovação automática.</p>
+      </div>
+      <div class="card">
+        <div class="icon sun">🎟️</div>
+        <h3>Licença promocional</h3>
+        <p>Por código, parceria ou campanha: acesso <strong>total</strong> a uma matéria pelo período da promoção.</p>
+      </div>
+      <div class="card">
+        <div class="icon coral">🔑</div>
+        <h3>Licença paga</h3>
+        <p>Por matéria ou passe completo. As licenças somam: comprou o passe tendo uma matéria? As duas seguem valendo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div class="kicker">Pagamento e cancelamento</div>
+      <h2>Sem pegadinha</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="icon mint">📲</div>
+        <h3>Pix ou cartão</h3>
+        <p>Pix por QR ou copia-e-cola libera o acesso em segundos. No cartão, a renovação é automática — e avisamos 3 dias antes de cada cobrança.</p>
+      </div>
+      <div class="card">
+        <div class="icon coral">↩️</div>
+        <h3>7 dias para desistir</h3>
+        <p>Comprou e não era o que esperava? Devolução integral em até 7 dias, sem justificativa, mesmo que já tenha assistido (CDC, art. 49).</p>
+      </div>
+      <div class="card">
+        <div class="icon">✌️</div>
+        <h3>Cancela em 2 cliques</h3>
+        <p>No painel, com protocolo. O acesso continua até o fim do período já pago — e seu progresso fica guardado se você voltar.</p>
+      </div>
+    </div>
+
+    <div class="notice" style="margin-top:1.6rem">
+      👨‍👩‍👧 <strong>Menor de 18 anos?</strong> Pode estudar aqui, mas o cadastro precisa do
+      aceite do responsável legal, e a compra é sempre feita no CPF do adulto responsável.
+      Contas de menores não recebem publicidade dirigida por comportamento.
+    </div>
+  </div>
+</section>
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="brand" style="color:#fff"><span class="mark">§</span> Aprendendo <em>o Direito</em></div>
+        <p style="margin-top:.7rem; max-width:26rem">Entender Direito sem precisar decorar. Aula curta, linguagem de gente e a lei ao lado.</p>
+      </div>
+      <div>
+        <h4>Plataforma</h4>
+        <a href="catalogo.html">Matérias</a>
+        <a href="vademecum.html">Vade-mécum</a>
+        <a href="planos.html">Planos e licenças</a>
+        <a href="app.html">Área do aluno</a>
+      </div>
+      <div>
+        <h4>Institucional</h4>
+        <a href="#">Sobre</a>
+        <a href="#">Anuncie aqui</a>
+        <a href="#">Termos de uso</a>
+        <a href="#">Privacidade e LGPD</a>
+        <a href="#">Reembolso e cancelamento</a>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <strong>Curso livre.</strong> O Aprendendo o Direito não é instituição de ensino credenciada pelo MEC
+      e não emite certificado de curso reconhecido. Também não presta consultoria jurídica nem responde a caso concreto.<br>
+      Direito de arrependimento em 7 dias (CDC, art. 49) · Cancelamento em 2 cliques no painel · Protótipo — dados ilustrativos.
+    </div>
+  </div>
+</footer>
+<script src="js/app.js"></script>
+</body>
+</html>
