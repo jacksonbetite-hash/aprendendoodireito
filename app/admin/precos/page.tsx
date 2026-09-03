@@ -1,13 +1,19 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import FormPreco from './FormPreco.tsx';
 import { acaoAlterarPreco } from '../acoes.ts';
 import { brl, PERIODOS, MESES, porMes, dataBR } from '../../../lib/precos.ts';
 import { historicoDePrecos, tabelaVigente } from '../../../lib/precos-consultas.ts';
+import { PORTAL_PLATAFORMA } from '../../../lib/portal.ts';
 
 export const metadata: Metadata = { title: 'Preços — Administração' };
 
 export default async function Precos() {
-  const [historico, tabela] = await Promise.all([historicoDePrecos(), tabelaVigente()]);
+  // A administração é a retaguarda da plataforma (§5.9). O painel do
+  // professor, com os preços do portal dele, é trabalho à parte (§5.10).
+  const [historico, tabela] = await Promise.all([
+    historicoDePrecos(), tabelaVigente(PORTAL_PLATAFORMA),
+  ]);
   const vigentes = historico.filter((h) => h.vigenteAte === null);
   const passados = historico.filter((h) => h.vigenteAte !== null);
 
@@ -16,7 +22,11 @@ export default async function Precos() {
       <h1 className="headline-lg">Tabela de valores</h1>
       <p className="suave">
         O preço novo vale a partir da data que você escolher e <strong>não afeta licença já
-        vigente</strong>. O anterior não é apagado: vira histórico.
+        vigente</strong>. O anterior não é apagado: vira histórico. Esta é a tabela da
+        plataforma; a de cada portal de professor fica em{' '}
+        <Link href="/admin/portais" style={{ color: 'var(--primary-texto)', fontWeight: 700 }}>
+          Portais de professor
+        </Link> (§5.10).
       </p>
 
       <div className="cartao">
@@ -32,7 +42,7 @@ export default async function Precos() {
                 const centavos = tabela[produto][periodo];
                 return (
                   <tr key={produto + periodo}>
-                    <td>{produto === 'MATERIA' ? 'Matéria avulsa' : 'Passe completo'}</td>
+                    <td>{produto === 'MATERIA' ? 'Curso avulso' : 'Passe completo'}</td>
                     <td>{periodo}</td>
                     <td><strong>{centavos ? brl(centavos) : '—'}</strong></td>
                     <td className="suave">
@@ -64,7 +74,7 @@ export default async function Precos() {
             <tbody>
               {passados.map((h) => (
                 <tr key={h.id}>
-                  <td>{h.produto === 'MATERIA' ? 'Matéria' : 'Passe'}</td>
+                  <td>{h.produto === 'MATERIA' ? 'Curso' : 'Passe'}</td>
                   <td>{h.periodo}</td>
                   <td>{brl(h.centavos)}</td>
                   <td className="suave apertado">{dataBR(h.vigenteDe)}</td>

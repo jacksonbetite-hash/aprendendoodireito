@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Icone } from '../componentes.tsx';
 import { Anel } from '../AnelProgresso.tsx';
-import { sair } from '../acoes-auth.ts';
+import LateralAluno from '../LateralAluno.tsx';
 import {
   alunoAtual, licencasDo, progressoPorMateria, continuarDeOndeParou,
   estatisticas, cadernoDeErros,
@@ -15,7 +15,10 @@ export const metadata: Metadata = { title: 'Minha jornada' };
 export const dynamic = 'force-dynamic';
 
 const DATA = (d: Date) => new Date(d).toLocaleDateString('pt-BR');
-const CORES = ['var(--tertiary-container)', 'var(--secondary)', 'var(--primary)'];
+// Três tons do mesmo roxo: os anéis distinguem cursos sem trazer uma
+// segunda cor de marca para o painel. O verde e o âmbar ficam reservados
+// para o que significa "certo" e "em curso".
+const CORES = ['var(--primary)', 'var(--primary-container)', '#a974ff'];
 
 export default async function Painel(
   { searchParams }: { searchParams: Promise<{ 'sem-acesso'?: string; bemvindo?: string; trial?: string }> },
@@ -42,27 +45,11 @@ export default async function Painel(
 
   return (
     <div className="app">
-      <aside className="lateral">
-        <div className="lateral-marca">
-          <span className="nome">Minha Jornada</span>
-          <span className="sub">{aluno.papel === 'admin' ? 'Administração' : 'Estudante de Direito'}</span>
-        </div>
-        <span className="item-lateral ativo"><Icone nome="dashboard" /> Dashboard</span>
-        <Link className="item-lateral" href="/catalogo"><Icone nome="menu_book" /> Catálogo</Link>
-        <Link className="item-lateral" href="/vademecum"><Icone nome="gavel" /> Vade-mécum</Link>
-        <Link className="item-lateral" href="/planos"><Icone nome="loyalty" /> Planos</Link>
-        <Link className="item-lateral" href="/conta"><Icone nome="payments" /> Minha conta</Link>
-        {aluno.papel === 'admin' && (
-          <Link className="item-lateral" href="/admin"><Icone nome="settings" /> Administração</Link>
-        )}
-        <form action={sair} style={{ marginTop: 'auto' }}>
-          <button className="item-lateral saida" type="submit"><Icone nome="logout" /> Sair</button>
-        </form>
-      </aside>
+      <LateralAluno papel={aluno.papel} />
 
       <div className="conteudo">
         <div className="barra-superior">
-          <Link className="marca" href="/"><span className="simbolo mono"><Icone nome="balance" tamanho={22} /></span> Aprendendo o Direito</Link>
+          <Link className="marca" href="/">Aprimore o Saber</Link>
           <div className="usuario">
             <span className="sino"><Icone nome="notifications" tamanho={24} /></span>
             <span className="avatar">{aluno.nome.split(' ').map((p) => p[0]).slice(0, 2).join('')}</span>
@@ -93,7 +80,7 @@ export default async function Painel(
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div className="saudacao">
               <h2>Olá, <em>{aluno.nome.split(' ')[0]}!</em> 👋</h2>
-              <p>Pronta para continuar dominando o Direito hoje?</p>
+              <p>Pronto para avançar mais um pouco hoje?</p>
             </div>
             {diasTrial !== null && (
               <span className="aviso" style={{ borderRadius: 'var(--r-md)', borderLeftWidth: 4, display: 'inline-flex', gap: 8, alignItems: 'center' }}>
@@ -118,7 +105,7 @@ export default async function Painel(
                   </div>
                   <div className="progresso"><i style={{ width: `${pctRetomar}%` }} /></div>
                 </div>
-                <Link className="btn btn-primario" style={{ justifySelf: 'start' }} href={`/aula/${continuar.slug}`}>
+                <Link className="btn btn-primario" style={{ justifySelf: 'start' }} href={`${continuar.base}/aula/${continuar.slug}`}>
                   Retomar Aula <Icone nome="arrow_forward" tamanho={20} />
                 </Link>
               </div>
@@ -127,7 +114,7 @@ export default async function Painel(
                 <span className="chip chip-secundaria" style={{ justifySelf: 'start' }}>COMECE POR AQUI</span>
                 <h3>Sua jornada começa agora</h3>
                 <p className="trilha">
-                  A 1ª aula de cada assunto é aberta. Escolha uma matéria e comece sem pagar nada.
+                  A 1ª aula de cada assunto é aberta. Escolha um curso e comece sem pagar nada.
                 </p>
                 <Link className="btn btn-primario" style={{ justifySelf: 'start' }} href="/catalogo">
                   Ver o catálogo <Icone nome="arrow_forward" tamanho={20} />
@@ -137,13 +124,13 @@ export default async function Painel(
 
             <div className="pilha-md">
               <Link className="cartao-vade" href="/vademecum">
-                <Icone nome="gavel" className="balanca" />
+                <Icone nome="menu_book" className="balanca" />
                 <span className="lupa"><Icone nome="search" tamanho={22} /></span>
-                <h3>Vade-mécum</h3>
-                <p>Busca inteligente de leis e jurisprudência</p>
+                <h3>Biblioteca</h3>
+                <p>Busca direta nas fontes originais</p>
               </Link>
-              <Link className="atalho" href={erros.length ? `/aula/${erros[0].aulaSlug}` : '/catalogo'}>
-                <span className="selo selo-primaria"><Icone nome="edit_note" /></span>
+              {/* Âncora do item "Caderno de erros" do menu Ferramentas. */}
+              <Link id="caderno" className="atalho" href={erros.length ? `${erros[0].base}/aula/${erros[0].aulaSlug}` : '/catalogo'}>
                 <span className="texto">
                   <strong>Caderno de Erros</strong>
                   <span>{erros.length ? `${erros.length} para revisar` : 'Revise suas dificuldades'}</span>
@@ -157,7 +144,7 @@ export default async function Painel(
             <h3 className="label-md suave" style={{ marginBottom: 16 }}>SEU DESEMPENHO</h3>
             {progresso.length === 0 ? (
               <p className="vazio">
-                Você ainda não tem matéria liberada. Comece pelo teste gratuito de 7 dias —
+                Você ainda não tem curso liberado. Comece pelo teste gratuito de 7 dias —
                 seu progresso aparece aqui.
               </p>
             ) : (
@@ -165,7 +152,7 @@ export default async function Painel(
                 {progresso.map((p, i) => {
                   const cor = CORES[i % CORES.length];
                   return (
-                    <Link className="cartao desempenho" href={`/materia/${p.materiaSlug}`} key={p.materiaSlug}>
+                    <Link className="cartao desempenho" href={`${p.base}/materia/${p.materiaSlug}`} key={p.materiaSlug}>
                       <Anel pct={p.percentual} cor={cor} />
                       <div>
                         <div className="nome">{p.materiaNome}</div>
@@ -189,7 +176,7 @@ export default async function Painel(
               <>
                 Você já respondeu <strong>{stats.respondidas} questões</strong> com{' '}
                 <strong>{stats.percentual}% de acerto</strong>. Revisar o Caderno de Erros 24 horas
-                após errar aumenta a retenção do conteúdo jurídico em até 60%.
+                após errar aumenta a retenção do conteúdo em até 60%.
               </>
             ) : (
               <>
@@ -219,7 +206,7 @@ export default async function Painel(
                       {vigente ? 'Ativa' : l.status.toLowerCase()}
                     </span>
                     {l.origem === 'TRIAL' && vigente && (
-                      <Link className="btn btn-primario btn-sm" href="/planos">Assinar matéria</Link>
+                      <Link className="btn btn-primario btn-sm" href="/planos">Assinar curso</Link>
                     )}
                   </div>
                 </div>
@@ -227,12 +214,11 @@ export default async function Painel(
             })}
             <p className="caption suave" style={{ marginTop: 14 }}>
               Licenças somam, nunca se anulam. Ao assinar o passe completo, as suas licenças de
-              matéria continuam valendo até expirar.
+              curso continuam valendo até expirar.
             </p>
           </div>
 
           <Link className="atalho" href="/conta">
-            <span className="selo selo-neutra"><Icone nome="payments" /></span>
             <span className="texto">
               <strong>Minha conta</strong>
               <span>Assinaturas, pedidos, reembolso e seus dados</span>

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Aprendendo o Direito — instalação local (macOS e Linux).
+# Aprimore o Saber — instalação local (macOS e Linux).
 # Equivalente ao instalar.ps1. Uso: ./instalar.sh
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -40,7 +40,7 @@ passo 'Construindo a imagem (a primeira vez leva alguns minutos)'
 #   CA_BUNDLE=/caminho/ca.crt ./instalar.sh
 if [ -n "${CA_BUNDLE:-}" ]; then
   echo "    usando CA extra: $CA_BUNDLE"
-  docker build --secret "id=ca_bundle,src=$CA_BUNDLE" -t aprendendoodireito:latest .
+  docker build --secret "id=ca_bundle,src=$CA_BUNDLE" -t aprimoreosaber:latest .
 else
   docker compose build
 fi
@@ -75,7 +75,7 @@ curl -sf "http://localhost:$PORTA/" >/dev/null || {
 }
 
 passo 'Criando o administrador'
-if [ "$(docker compose exec -T db psql -U aprendendo -d aprendendoodireito -t -A -c "SELECT count(*) FROM usuario WHERE papel='admin'" | tr -d '[:space:]')" = "0" ]; then
+if [ "$(docker compose exec -T db psql -U aprimore -d aprimoreosaber -t -A -c "SELECT count(*) FROM usuario WHERE papel='admin'" | tr -d '[:space:]')" = "0" ]; then
   if [ ! -t 0 ]; then
     # sem terminal interativo (CI, pipe): não trava pedindo dados
     echo '    Sem terminal interativo. Crie o admin depois com:'
@@ -96,7 +96,7 @@ fi
 cat <<TXT
 
   ============================================================
-   Aprendendo o Direito está rodando
+   Aprimore o Saber está rodando
 
    Site e sistema .... http://localhost:$PORTA
    Área do aluno ..... http://localhost:$PORTA/painel

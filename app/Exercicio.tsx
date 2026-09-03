@@ -51,8 +51,8 @@ export default function Exercicio(
         return (
           <div key={q.id} style={{ marginBottom: 40 }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span className="chip chip-secundaria">Questão {i + 1} de {questoes.length}</span>
-              <span className="chip chip-neutra">{q.origem}</span>
+              <span className="chip chip-primaria chip-sm">Questão {i + 1} de {questoes.length}</span>
+              <span className="chip chip-neutra chip-sm">{q.origem}</span>
             </div>
             <p className="enunciado">{q.enunciado}</p>
 
@@ -81,10 +81,9 @@ export default function Exercicio(
             {marcada && (
               <div className="comentario">
                 <div className="cabeca">
-                  <span className="selo"><Icone nome="school" /></span>
                   <div>
                     <strong>Comentário {professor?.startsWith('Prof.ª') ? 'da Professora' : 'do Professor'}</strong>
-                    <span>{professor ?? 'Equipe Aprendendo o Direito'}</span>
+                    <span>{professor ?? 'Equipe Aprimore o Saber'}</span>
                   </div>
                   <span className="xp"><Icone nome="bolt" tamanho={14} /> {acertou ? '+10 XP' : '+3 XP'}</span>
                 </div>

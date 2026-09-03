@@ -18,3 +18,6 @@ next-env.d.ts
 
 # rascunhos locais
 .senha-admin
+
+# mídia das aulas — volume, nunca repositório (docs/entrega-de-video.md)
+/midia

@@ -1,0 +1,11 @@
+# Scripts executados dentro do container (Linux) precisam de LF. Com CRLF,
+# o shebang vira "/bin/sh\r" e o container morre com
+# "exec /usr/local/bin/docker-entrypoint.sh: no such file or directory".
+*.sh            text eol=lf
+docker-entrypoint.sh text eol=lf
+Dockerfile      text eol=lf
+*.mjs           text eol=lf
+
+# Scripts do Windows seguem com CRLF.
+*.ps1           text eol=crlf
+*.bat           text eol=crlf

@@ -106,6 +106,21 @@ export function podeAcessar(espectador: Espectador, aula: AulaAlvo, agora = new 
   return { libera: false, motivo: 'SEM_LICENCA' };
 }
 
+/**
+ * §5.10.2, etapa 5 — curso de OUTRO portal visto na nossa vitrine.
+ *
+ * O passe completo (CATALOGO) cobre "todas as matérias" de UM portal: o
+ * do aluno. Ele não alcança o curso de um professor parceiro — esse só
+ * abre com licença da própria matéria (compra, cortesia, promocional).
+ * Sem esta regra, o passe da plataforma daria acesso a todo curso
+ * compartilhado sem que o professor visse um centavo, e o rateio que o
+ * §5.10 evitou de propósito voltaria pela janela.
+ */
+export function espectadorParaCurso(espectador: Espectador, cursoDoMesmoPortal: boolean): Espectador {
+  if (cursoDoMesmoPortal) return espectador;
+  return { ...espectador, licencas: espectador.licencas.filter((l) => l.escopo !== 'CATALOGO') };
+}
+
 /** Texto da oferta contextual mostrada quando a aula bloqueia. */
 export function ofertaPara(motivo: MotivoBloqueio): string {
   switch (motivo) {
@@ -114,6 +129,6 @@ export function ofertaPara(motivo: MotivoBloqueio): string {
     case 'FORA_DA_COTA_DO_TRIAL':
       return 'Esta aula está fora do que o teste gratuito libera. Assine a matéria para abrir todas as aulas — seu progresso continua de onde parou.';
     case 'SEM_LICENCA':
-      return 'Esta aula faz parte de uma matéria licenciada. Teste 7 dias grátis, sem cartão, ou assine só esta matéria.';
+      return 'Esta aula faz parte de um curso licenciado. Teste 7 dias grátis, sem cartão, ou assine só este curso.';
   }
 }

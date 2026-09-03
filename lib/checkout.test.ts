@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 const { pool, query } = await import('./db.ts');
 const { abrirPedido, confirmarPagamento, ativarTrial, cancelarAssinatura, pedirReembolso }
   = await import('./checkout.ts');
+const { PORTAL_PLATAFORMA } = await import('./portal.ts');
 
 let temBanco = true;
 try { await pool.query('SELECT 1 FROM pedido LIMIT 1'); } catch { temBanco = false; }
@@ -21,8 +22,9 @@ const EMAIL = 'teste-checkout@exemplo.com';
 
 async function usuarioDeTeste(): Promise<number> {
   const [u] = await query<{ id: number }>(
-    `INSERT INTO usuario (nome, email, papel) VALUES ('Teste Checkout', $1, 'aluno')
-     ON CONFLICT (lower(email)) DO UPDATE SET nome = EXCLUDED.nome
+    `INSERT INTO usuario (portal_id, nome, email, papel)
+     VALUES (${PORTAL_PLATAFORMA}, 'Teste Checkout', $1, 'aluno')
+     ON CONFLICT (portal_id, lower(email)) DO UPDATE SET nome = EXCLUDED.nome
      RETURNING id`, [EMAIL],
   );
   // a licença aponta para o pedido, então sai antes dele
@@ -34,8 +36,14 @@ async function usuarioDeTeste(): Promise<number> {
 }
 
 async function materiaPublicada(): Promise<number> {
+  // Escopo explícito: com portais de professor no banco (§5.10), "qualquer
+  // matéria publicada" pode ser a de outro portal — e o pedido, que é da
+  // plataforma, seria recusado. O teste ficaria vermelho por dado de
+  // vizinho, não por defeito.
   const [m] = await query<{ id: number }>(
-    `SELECT id FROM materia WHERE status = 'publicado' ORDER BY ordem LIMIT 1`);
+    `SELECT id FROM materia
+      WHERE status = 'publicado' AND portal_id = $1
+      ORDER BY ordem LIMIT 1`, [PORTAL_PLATAFORMA]);
   return m.id;
 }
 
@@ -47,7 +55,7 @@ const evento = (
 test('pagamento confirmado emite licença e marca o pedido como pago', talvez, async () => {
   const usuarioId = await usuarioDeTeste();
   const materiaId = await materiaPublicada();
-  const pedido = await abrirPedido(usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
+  const pedido = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
 
   const r = await confirmarPagamento(evento(pedido.referencia, 'teste-1'), 'simulado', {});
   assert.equal(r.ok, true);
@@ -62,7 +70,7 @@ test('pagamento confirmado emite licença e marca o pedido como pago', talvez, a
 test('o MESMO evento chegando duas vezes não emite segunda licença', talvez, async () => {
   const usuarioId = await usuarioDeTeste();
   const materiaId = await materiaPublicada();
-  const pedido = await abrirPedido(usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
+  const pedido = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
 
   const primeiro = await confirmarPagamento(evento(pedido.referencia, 'teste-repetido'), 'simulado', {});
   const segundo  = await confirmarPagamento(evento(pedido.referencia, 'teste-repetido'), 'simulado', {});
@@ -80,7 +88,7 @@ test('dois eventos distintos no mesmo pedido também não duplicam', talvez, asy
   // a segunda guarda é o pedido só avançar quando ainda está ABERTO
   const usuarioId = await usuarioDeTeste();
   const materiaId = await materiaPublicada();
-  const pedido = await abrirPedido(usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
+  const pedido = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
 
   await confirmarPagamento(evento(pedido.referencia, 'teste-a'), 'simulado', {});
   const segundo = await confirmarPagamento(evento(pedido.referencia, 'teste-b'), 'simulado', {});
@@ -93,7 +101,7 @@ test('dois eventos distintos no mesmo pedido também não duplicam', talvez, asy
 test('evento de pagamento falho não emite licença', talvez, async () => {
   const usuarioId = await usuarioDeTeste();
   const materiaId = await materiaPublicada();
-  const pedido = await abrirPedido(usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'CARTAO');
+  const pedido = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'CARTAO');
 
   const r = await confirmarPagamento(
     evento(pedido.referencia, 'teste-falha', 'pagamento.falhou'), 'simulado', {});
@@ -111,13 +119,13 @@ test('Pix avulso não cria assinatura; cartão cria', talvez, async () => {
   const materiaId = await materiaPublicada();
 
   let usuarioId = await usuarioDeTeste();
-  const pix = await abrirPedido(usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
+  const pix = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
   await confirmarPagamento(evento(pix.referencia, 'teste-pix'), 'simulado', {});
   let assinaturas = await query('SELECT id FROM assinatura WHERE usuario_id = $1', [usuarioId]);
   assert.equal(assinaturas.length, 0, 'Pix avulso não renova sozinho (§6.4)');
 
   usuarioId = await usuarioDeTeste();
-  const cartao = await abrirPedido(usuarioId, EMAIL, 'CATALOGO', 'anual', null, 'CARTAO');
+  const cartao = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'CATALOGO', 'anual', null, 'CARTAO');
   await confirmarPagamento(evento(cartao.referencia, 'teste-cartao'), 'simulado', {});
   assinaturas = await query('SELECT id FROM assinatura WHERE usuario_id = $1', [usuarioId]);
   assert.equal(assinaturas.length, 1, 'cartão renova automaticamente');
@@ -125,7 +133,7 @@ test('Pix avulso não cria assinatura; cartão cria', talvez, async () => {
 
 test('licença do passe cobre 12 meses no plano anual', talvez, async () => {
   const usuarioId = await usuarioDeTeste();
-  const pedido = await abrirPedido(usuarioId, EMAIL, 'CATALOGO', 'anual', null, 'PIX');
+  const pedido = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'CATALOGO', 'anual', null, 'PIX');
   await confirmarPagamento(evento(pedido.referencia, 'teste-anual'), 'simulado', {});
   const [l] = await query<{ meses: number; escopo: string }>(
     `SELECT escopo, EXTRACT(month FROM age(fim_em, inicio_em))::int
@@ -152,7 +160,7 @@ test('trial recusa matéria não publicada', talvez, async () => {
 test('cancelamento gera protocolo e não derruba o acesso já pago', talvez, async () => {
   const usuarioId = await usuarioDeTeste();
   const materiaId = await materiaPublicada();
-  const pedido = await abrirPedido(usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'CARTAO');
+  const pedido = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'CARTAO');
   await confirmarPagamento(evento(pedido.referencia, 'teste-cancelar'), 'simulado', {});
 
   const [a] = await query<{ id: number }>('SELECT id FROM assinatura WHERE usuario_id = $1', [usuarioId]);
@@ -167,7 +175,7 @@ test('cancelamento gera protocolo e não derruba o acesso já pago', talvez, asy
 test('reembolso em 7 dias devolve e encerra a licença', talvez, async () => {
   const usuarioId = await usuarioDeTeste();
   const materiaId = await materiaPublicada();
-  const pedido = await abrirPedido(usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
+  const pedido = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
   await confirmarPagamento(evento(pedido.referencia, 'teste-reemb'), 'simulado', {});
 
   const protocolo = await pedirReembolso(usuarioId, EMAIL, pedido.id);
@@ -179,7 +187,7 @@ test('reembolso em 7 dias devolve e encerra a licença', talvez, async () => {
 test('reembolso fora dos 7 dias é recusado', talvez, async () => {
   const usuarioId = await usuarioDeTeste();
   const materiaId = await materiaPublicada();
-  const pedido = await abrirPedido(usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
+  const pedido = await abrirPedido(PORTAL_PLATAFORMA, usuarioId, EMAIL, 'MATERIA', 'mensal', materiaId, 'PIX');
   await confirmarPagamento(evento(pedido.referencia, 'teste-velho'), 'simulado', {});
   await query(`UPDATE pedido SET pago_em = now() - interval '10 days' WHERE id = $1`, [pedido.id]);
   await assert.rejects(() => pedirReembolso(usuarioId, EMAIL, pedido.id), /7 dias/);

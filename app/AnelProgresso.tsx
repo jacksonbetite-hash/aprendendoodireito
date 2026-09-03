@@ -1,4 +1,4 @@
-/** Anel de progresso do painel — o design system pede indicador circular por matéria. */
+/** Anel de progresso do painel — o design system pede indicador circular por curso. */
 export function Anel({ pct, cor }: { pct: number; cor: string }) {
   const raio = 30;
   const volta = 2 * Math.PI * raio;

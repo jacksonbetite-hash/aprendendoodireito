@@ -1,5 +1,5 @@
 -- =====================================================================
--- Aprendendo o Direito — schema inicial (Fase 1 / MVP)
+-- Aprimore o Saber — schema inicial (Fase 1 / MVP)
 -- Modelado a partir do §11 do discovery. Só os domínios do MVP:
 -- identidade, catálogo, exercícios, legislação, comercial e progresso.
 -- Repasse, publicidade e vagas ficam para a Fase 2.

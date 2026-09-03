@@ -27,8 +27,15 @@ COPY --from=build /app/public ./public
 # migrações rodam pelo entrypoint; o `pg` já vem traçado no standalone
 COPY --from=build /app/db ./db
 COPY --from=build /app/scripts ./scripts
+# O importador do vade-mécum (§5.4) lê o HTML do Planalto com lib/planalto.ts.
+# O standalone do Next embute essa lógica no bundle das páginas, mas o script
+# roda fora dele, pelo entrypoint — e precisa do arquivo em si.
+COPY --from=build /app/lib ./lib
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh && chown -R nextjs:nodejs /app
+# Clones feitos no Windows podem trazer CRLF: o shebang viraria "/bin/sh\r"
+# e o container morreria em "no such file or directory". Normaliza aqui.
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+ && chmod +x /usr/local/bin/docker-entrypoint.sh && chown -R nextjs:nodejs /app
 
 USER nextjs
 EXPOSE 3000

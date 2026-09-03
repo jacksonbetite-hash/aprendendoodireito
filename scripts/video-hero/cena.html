@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Cena do vídeo do hero — Aprimore o Saber</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=block">
+<style>
+/* ==================================================================
+   Cena do vídeo ilustrativo do hero.
+
+   Nada aqui anima sozinho: quem move a cena é desenhar(t), chamada
+   quadro a quadro por scripts/gerar-video-hero.mjs. Animação de CSS
+   depende de quando o relógio do navegador roda, e captura de tela com
+   relógio livre sai trêmula — com o tempo vindo de fora, o mesmo t dá
+   sempre exatamente o mesmo quadro.
+
+   As cores e a tipografia são as de docs/identidade-visual.md, repetidas
+   aqui porque esta página não passa pelo Next e não enxerga globals.css.
+   Ao mexer na identidade, mexa também nestes tokens.
+   ================================================================== */
+:root {
+  --on-surface: #0f172a;
+  --on-surface-variant: #475569;
+  --surface: #ffffff;
+  --surface-container: #f6f6f8;
+  --surface-container-high: #f1f5f9;
+  --surface-container-highest: #e2e8f0;
+  --primary-texto: #6d28d9;
+  --primary-fixed: #f3f0ff;
+  --on-primary-fixed-variant: #5b21b6;
+  --contorno-pill: #c4b5fd;
+  --verde: #0f766e;
+  --verde-fundo: #ccfbf1;
+  --fonte: "Lexend", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-full: 999px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1280px; height: 960px; overflow: hidden; background: #4c1d95; }
+body { font-family: var(--fonte); -webkit-font-smoothing: antialiased; }
+
+#palco {
+  position: relative; width: 1280px; height: 960px; overflow: hidden;
+  background: linear-gradient(140deg, #7c3aed, #4c1d95);
+}
+
+/* Manchas de luz que derivam devagar: dão movimento contínuo por baixo
+   dos cortes, para o vídeo nunca ficar parado entre uma cena e outra. */
+.brilho { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .85; }
+#b1 { width: 900px; height: 780px; background: #a974ff; }
+#b2 { width: 760px; height: 700px; background: #8a63ff; }
+#b3 { width: 620px; height: 560px; background: #5b21b6; }
+
+/* Véu de contraste: o texto branco precisa de 4,5:1 sobre o fundo, e as
+   manchas claras sozinhas não garantem isso. */
+#veu {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(30,10,70,.32), rgba(30,10,70,.12) 45%, rgba(30,10,70,.44));
+}
+
+.cena {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  align-content: center; gap: 40px; padding: 60px; will-change: opacity, transform;
+}
+
+/* ---------- comuns ---------- */
+.rotulo-cena {
+  display: inline-flex; align-items: center; gap: 12px; align-self: center;
+  color: #fff; font-size: 42px; font-weight: 600; letter-spacing: -.01em;
+}
+.rotulo-cena .ponto { width: 16px; height: 16px; border-radius: 50%; background: #ddd6fe; }
+.tela {
+  width: 1120px; background: var(--surface); border-radius: 32px;
+  box-shadow: 0 30px 70px -20px rgba(15,23,42,.55); overflow: hidden;
+}
+.tela-topo {
+  display: flex; align-items: center; gap: 14px;
+  padding: 26px 36px; border-bottom: 1px solid var(--surface-container-high);
+}
+.semaforo { display: flex; gap: 11px; }
+.semaforo i { width: 16px; height: 16px; border-radius: 50%; background: var(--surface-container-highest); }
+.tela-titulo { font-size: 28px; font-weight: 600; color: var(--on-surface); }
+.pill {
+  display: inline-flex; align-items: center; gap: 10px; padding: 10px 24px;
+  border-radius: var(--r-full); background: var(--primary-fixed);
+  border: 2px solid var(--contorno-pill); color: var(--on-primary-fixed-variant);
+  font-size: 23px; font-weight: 600; white-space: nowrap;
+}
+
+/* ---------- 1. abertura ---------- */
+#c1 { gap: 26px; }
+#marca-simbolo {
+  width: 156px; height: 156px; border-radius: 46px; background: #fff;
+  display: grid; place-items: center; box-shadow: 0 24px 60px -18px rgba(15,23,42,.5);
+}
+#c1 h1 {
+  color: #fff; font-size: 92px; font-weight: 800; line-height: 1.02;
+  letter-spacing: -.03em; text-align: center;
+}
+#c1 h1 span { display: block; color: #ddd6fe; font-size: 52px; font-weight: 300; letter-spacing: -.01em; margin-top: 16px; }
+#risco { height: 7px; border-radius: 3px; background: #fff; opacity: .9; }
+
+/* ---------- 2. aula ---------- */
+#player {
+  position: relative; height: 430px; margin: 32px;
+  border-radius: var(--r-lg); overflow: hidden;
+  background: radial-gradient(90% 120% at 30% 0%, #6d28d9, #2e1065);
+  display: grid; place-items: center;
+}
+#botao-play {
+  width: 128px; height: 128px; border-radius: 50%; background: rgba(255,255,255,.16);
+  border: 3px solid rgba(255,255,255,.55); display: grid; place-items: center;
+}
+#player .capitulo {
+  position: absolute; left: 32px; top: 28px; color: #fff; font-size: 26px;
+  font-weight: 500; opacity: .88;
+}
+#trilho-aula {
+  position: absolute; left: 32px; right: 32px; bottom: 30px;
+  display: flex; align-items: center; gap: 20px; color: #fff;
+}
+#trilho-aula .barra { flex: 1; height: 10px; border-radius: 4px; background: rgba(255,255,255,.28); position: relative; }
+#trilho-aula .barra i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: #fff; }
+#trilho-aula .barra b {
+  position: absolute; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px;
+  border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+#trilho-aula .tempo { font-size: 24px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.rodape-tela {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 0 36px 34px; color: var(--on-surface-variant); font-size: 26px; font-weight: 300;
+}
+
+/* ---------- 3. exercício ---------- */
+#c3 .enunciado { padding: 34px 36px 8px; font-size: 33px; font-weight: 500; color: var(--on-surface); line-height: 1.4; }
+.alternativas { padding: 24px 36px 10px; display: grid; gap: 16px; }
+.alt {
+  display: flex; align-items: center; gap: 20px; padding: 20px 26px;
+  border: 2px solid var(--surface-container-highest); border-radius: 16px;
+  font-size: 29px; color: var(--on-surface); background: var(--surface);
+}
+.alt .letra {
+  width: 48px; height: 48px; flex: none; border-radius: 50%;
+  background: var(--surface-container-high); color: var(--on-surface-variant);
+  display: grid; place-items: center; font-size: 23px; font-weight: 600;
+}
+.alt.certa { border-color: var(--verde); background: var(--verde-fundo); }
+.alt.certa .letra { background: var(--verde); color: #fff; }
+.alt .visto { margin-left: auto; color: var(--verde); display: grid; place-items: center; }
+#comentario {
+  margin: 12px 36px 34px; padding: 22px 28px; border-radius: 16px;
+  background: var(--surface-container); border-left: 6px solid var(--verde);
+  color: var(--on-surface-variant); font-size: 26px; font-weight: 300; line-height: 1.5;
+}
+#comentario b { color: var(--verde); font-weight: 600; }
+
+/* ---------- 4. fonte original ---------- */
+#lei { padding: 32px 36px 34px; font-size: 30px; line-height: 1.62; color: var(--on-surface-variant); font-weight: 300; }
+#lei .art { display: block; color: var(--on-surface); font-weight: 600; margin-bottom: 12px; }
+#lei .inciso { position: relative; display: block; padding: 8px; margin: 8px -8px 0; border-radius: 6px; font-style: normal; }
+#lei .inciso b, #lei .inciso span { position: relative; z-index: 1; }
+#lei .inciso b { color: var(--on-surface); font-weight: 600; }
+#marca-texto { position: absolute; inset: 0 100% 0 0; border-radius: 6px; background: #ede9fe; z-index: 0; }
+#etiqueta-fonte { padding: 0 36px 34px; }
+
+/* ---------- 5. progresso ---------- */
+#c5 .tela { width: 1060px; }
+#painel { display: grid; grid-template-columns: 300px 1fr; gap: 44px; align-items: center; padding: 42px 44px; }
+#anel { position: relative; width: 260px; height: 260px; justify-self: center; }
+#anel .valor {
+  position: absolute; inset: 0; display: grid; place-items: center; align-content: center;
+  font-size: 66px; font-weight: 700; color: var(--on-surface); font-variant-numeric: tabular-nums;
+}
+#anel .valor small { display: block; font-size: 22px; font-weight: 400; color: var(--on-surface-variant); margin-top: 4px; }
+.linhas { display: grid; gap: 26px; }
+.linha .cabeca { display: flex; justify-content: space-between; font-size: 26px; color: var(--on-surface); margin-bottom: 12px; }
+.linha .cabeca span { color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
+.linha .trilho { height: 16px; border-radius: 8px; background: var(--surface-container-highest); overflow: hidden; }
+.linha .trilho i { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, #7c3aed, #8a63ff); }
+#cta {
+  display: inline-flex; align-items: center; gap: 14px; align-self: center;
+  padding: 24px 48px; border-radius: var(--r-full); background: #fff; color: var(--primary-texto);
+  font-size: 38px; font-weight: 700; box-shadow: 0 20px 44px -14px rgba(15,23,42,.5);
+}
+#assinatura { display: flex; align-items: center; gap: 18px; align-self: center; color: #fff; font-size: 34px; font-weight: 600; }
+#assinatura .cap { width: 58px; height: 58px; border-radius: 18px; background: #fff; display: grid; place-items: center; }
+
+/* Linha de tempo do filme inteiro, no pé do quadro: costura os cortes e
+   diz de relance que aquilo é um vídeo, e não uma imagem parada. */
+#barra-filme { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: rgba(255,255,255,.20); }
+#barra-filme i { display: block; height: 100%; background: #fff; opacity: .9; }
+</style>
+</head>
+<body>
+<div id="palco">
+  <div class="brilho" id="b1"></div>
+  <div class="brilho" id="b2"></div>
+  <div class="brilho" id="b3"></div>
+  <div id="veu"></div>
+
+  <!-- ---------- 1. abertura ---------- -->
+  <div class="cena" id="c1">
+    <div id="marca-simbolo">
+      <svg width="112" height="112" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 8.5a5.4 5.4 0 0 0-3.2 9.75c.5.37.8.94.8 1.55v.2h4.8v-.2c0-.61.3-1.18.8-1.55A5.4 5.4 0 0 0 16 8.5Z"
+              fill="none" stroke="#6d28d9" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M14.1 23h3.8" fill="none" stroke="#6d28d9" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1>Aprimore o seu saber<span>no ritmo de quem trabalha</span></h1>
+    <div id="risco"></div>
+  </div>
+
+  <!-- ---------- 2. aula ---------- -->
+  <div class="cena" id="c2">
+    <div class="rotulo-cena"><i class="ponto"></i> Aula curta, direto ao ponto</div>
+    <div class="tela">
+      <div class="tela-topo">
+        <div class="semaforo"><i></i><i></i><i></i></div>
+        <div class="tela-titulo">Direitos fundamentais na prática</div>
+        <div class="pill" style="margin-left:auto">Aula 3 de 12</div>
+      </div>
+      <div id="player">
+        <div class="capitulo" id="capitulo">Capítulo 1 · O que a Constituição garante</div>
+        <div id="botao-play">
+          <svg width="54" height="54" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+            <path d="M9 6.6v10.8l8.4-5.4L9 6.6Z"/>
+          </svg>
+        </div>
+        <div id="trilho-aula">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M8 5.6v12.8l10-6.4L8 5.6Z"/></svg>
+          <div class="barra"><i></i><b></b></div>
+          <div class="tempo" id="tempo">00:00 / 12:00</div>
+        </div>
+      </div>
+      <div class="rodape-tela">
+        <span>Nenhuma aula passa de 15 minutos.</span>
+        <span class="pill">12 min</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- 3. exercício ---------- -->
+  <div class="cena" id="c3">
+    <div class="rotulo-cena"><i class="ponto"></i> Exercício comentado na sequência</div>
+    <div class="tela">
+      <div class="tela-topo">
+        <div class="semaforo"><i></i><i></i><i></i></div>
+        <div class="tela-titulo">Questão 1 de 8</div>
+        <div class="pill" style="margin-left:auto">Comentada</div>
+      </div>
+      <p class="enunciado">Na Constituição de 1988, a dignidade da pessoa humana é:</p>
+      <div class="alternativas">
+        <div class="alt"><span class="letra">A</span> objetivo fundamental da República</div>
+        <div class="alt" id="alt-certa">
+          <span class="letra">B</span> fundamento da República
+          <span class="visto">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          </span>
+        </div>
+        <div class="alt"><span class="letra">C</span> princípio das relações internacionais</div>
+      </div>
+      <div id="comentario">
+        <b>Isso.</b> Dignidade da pessoa humana é <b>fundamento</b> — art. 1º, III. Os objetivos estão no
+        art. 3º, e os princípios das relações internacionais, no art. 4º.
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- 4. fonte original ---------- -->
+  <div class="cena" id="c4">
+    <div class="rotulo-cena"><i class="ponto"></i> A fonte original a um clique</div>
+    <div class="tela">
+      <div class="tela-topo">
+        <div class="semaforo"><i></i><i></i><i></i></div>
+        <div class="tela-titulo">Biblioteca · Constituição Federal de 1988</div>
+        <div class="pill" style="margin-left:auto">Texto oficial</div>
+      </div>
+      <div id="lei">
+        <b class="art">Art. 1º</b>
+        A República Federativa do Brasil, formada pela união indissolúvel dos Estados e Municípios e do
+        Distrito Federal, constitui-se em Estado Democrático de Direito e tem como fundamentos:
+        <em class="inciso">
+          <i id="marca-texto"></i><b>III —</b> <span>a dignidade da pessoa humana;</span>
+        </em>
+      </div>
+      <div id="etiqueta-fonte"><span class="pill">Do texto da lei, sem resumo de resumo</span></div>
+    </div>
+  </div>
+
+  <!-- ---------- 5. progresso e chamada ---------- -->
+  <div class="cena" id="c5">
+    <div class="rotulo-cena"><i class="ponto"></i> Progresso visível por área</div>
+    <div class="tela">
+      <div id="painel">
+        <div id="anel">
+          <svg viewBox="0 0 72 72" width="260" height="260" aria-hidden="true">
+            <circle cx="36" cy="36" r="30" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+            <circle id="anel-frente" cx="36" cy="36" r="30" fill="none" stroke="#7c3aed" stroke-width="8"
+                    stroke-linecap="round" transform="rotate(-90 36 36)"/>
+          </svg>
+          <div class="valor"><span id="anel-pct">0%</span><small>da trilha</small></div>
+        </div>
+        <div class="linhas">
+          <div class="linha"><div class="cabeca">Direito Constitucional <span data-alvo="86">0%</span></div><div class="trilho"><i></i></div></div>
+          <div class="linha"><div class="cabeca">Direito Administrativo <span data-alvo="64">0%</span></div><div class="trilho"><i></i></div></div>
+          <div class="linha"><div class="cabeca">Direito Civil <span data-alvo="41">0%</span></div><div class="trilho"><i></i></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="cta">
+      Teste grátis por 7 dias
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 12h15m-6-6 6 6-6 6"/>
+      </svg>
+    </div>
+    <div id="assinatura">
+      <span class="cap">
+        <svg width="36" height="36" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M16 8.5a5.4 5.4 0 0 0-3.2 9.75c.5.37.8.94.8 1.55v.2h4.8v-.2c0-.61.3-1.18.8-1.55A5.4 5.4 0 0 0 16 8.5Z"
+                fill="none" stroke="#6d28d9" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M14.1 23h3.8" fill="none" stroke="#6d28d9" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Aprimore o Saber
+    </div>
+  </div>
+
+  <div id="barra-filme"><i></i></div>
+</div>
+
+<script>
+'use strict';
+/* ------------------------------------------------------------------
+   O relógio vem de fora: desenhar(t) posiciona tudo em função de t
+   (segundos). Duas chamadas com o mesmo t dão o mesmo quadro.
+   ------------------------------------------------------------------ */
+const DURACAO = 22;                       // segundos do filme inteiro
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+const limitar = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+/* Fatia de 0 a 1 do intervalo [ini, fim] no tempo t. */
+const fatia = (t, ini, fim) => limitar((t - ini) / (fim - ini));
+/* Desaceleração no fim — o mesmo espírito do --ease-saida da interface. */
+const saida = (x) => 1 - Math.pow(1 - x, 3);
+
+/* Cada cena entra, segura e sai. As bordas se sobrepõem em 0,2 s para
+   o corte não piscar entre uma tela e a próxima.
+
+   Estes cortes NÃO são livres: cada um tem de conter a fala da sua cena,
+   com folga nas duas pontas para a voz não começar durante o fade nem
+   ser cortada por ele. Ao mexer aqui, confira contra os instantes de
+   scripts/video-hero/narracao/narracao.json — o LEIA-ME de lá tem o
+   comando que mede onde a voz caiu no arquivo pronto. */
+const CENAS = [
+  { id: '#c1', ini:  0.0, fim:  4.5 },
+  { id: '#c2', ini:  4.3, fim:  9.0 },
+  { id: '#c3', ini:  8.8, fim: 13.1 },
+  { id: '#c4', ini: 12.9, fim: 16.6 },
+  { id: '#c5', ini: 16.4, fim: 22.0 },
+];
+const ENTRADA = 0.55, SAIDA = 0.35;
+
+function opacidadeCena(t, ini, fim) {
+  if (t < ini || t > fim) return 0;
+  return Math.min(fatia(t, ini, ini + ENTRADA), 1 - fatia(t, fim - SAIDA, fim));
+}
+
+/* Relógio do player, em mm:ss. */
+function relogio(seg) {
+  const m = Math.floor(seg / 60), s = Math.floor(seg % 60);
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+function desenhar(t) {
+  /* --- fundo: as manchas derivam em círculos lentos e fora de fase --- */
+  const derivar = (el, raioX, raioY, volta, fase, cx, cy) => {
+    const a = (t / volta + fase) * Math.PI * 2;
+    el.style.left = (cx + Math.cos(a) * raioX - el.offsetWidth / 2) + 'px';
+    el.style.top  = (cy + Math.sin(a) * raioY - el.offsetHeight / 2) + 'px';
+  };
+  derivar($('#b1'), 130,  90, 21, 0.00,  300, 240);
+  derivar($('#b2'), 110, 120, 17, 0.35, 1010, 330);
+  derivar($('#b3'), 150, 100, 25, 0.66,  640, 860);
+
+  /* --- cenas: opacidade e uma subida curta na entrada --- */
+  for (const c of CENAS) {
+    const el = $(c.id);
+    const o = opacidadeCena(t, c.ini, c.fim);
+    el.style.opacity = o;
+    const sobe = 1 - saida(fatia(t, c.ini, c.ini + ENTRADA));
+    el.style.transform = 'translateY(' + (sobe * 26).toFixed(2) + 'px)';
+    el.style.visibility = o > 0.001 ? 'visible' : 'hidden';
+  }
+
+  /* --- 1. abertura: símbolo, título e risco entram em escada --- */
+  {
+    const p = t - CENAS[0].ini;
+    const s = saida(fatia(p, 0.10, 0.95));
+    $('#marca-simbolo').style.transform = 'scale(' + (0.72 + 0.28 * s).toFixed(3) + ')';
+    $('#marca-simbolo').style.opacity = s;
+    const h = saida(fatia(p, 0.45, 1.35));
+    $('#c1 h1').style.opacity = h;
+    $('#c1 h1').style.transform = 'translateY(' + ((1 - h) * 22).toFixed(2) + 'px)';
+    $('#risco').style.width = (saida(fatia(p, 0.95, 2.10)) * 320).toFixed(1) + 'px';
+  }
+
+  /* --- 2. aula: a barra do player anda e o relógio anda junto --- */
+  {
+    const p = t - CENAS[1].ini;
+    const avanco = 0.06 + saida(fatia(p, 0.5, 4.2)) * 0.56;   // 6% → 62%
+    $('#trilho-aula .barra i').style.width = (avanco * 100) + '%';
+    $('#trilho-aula .barra b').style.left  = (avanco * 100) + '%';
+    $('#tempo').textContent = relogio(avanco * 720) + ' / 12:00';
+    $('#capitulo').textContent = avanco < 0.34
+      ? 'Capítulo 1 · O que a Constituição garante'
+      : 'Capítulo 2 · Onde isso aparece na prova';
+    $('#botao-play').style.transform = 'scale(' + (1 + Math.sin(p * 2.4) * 0.035).toFixed(3) + ')';
+  }
+
+  /* --- 3. exercício: a alternativa é marcada, depois vem o comentário --- */
+  {
+    const p = t - CENAS[2].ini;
+    $$('#c3 .alt').forEach((el, i) => {
+      const e = saida(fatia(p, 0.35 + i * 0.16, 1.05 + i * 0.16));
+      el.style.opacity = e;
+      el.style.transform = 'translateX(' + ((1 - e) * -18).toFixed(2) + 'px)';
+    });
+    $('#alt-certa').classList.toggle('certa', p > 1.85);
+    const v = saida(fatia(p, 1.85, 2.25));
+    $('#alt-certa .visto').style.opacity = v;
+    $('#alt-certa .visto').style.transform = 'scale(' + (0.4 + 0.6 * v).toFixed(3) + ')';
+    const c = saida(fatia(p, 2.25, 2.95));
+    $('#comentario').style.opacity = c;
+    $('#comentario').style.transform = 'translateY(' + ((1 - c) * 14).toFixed(2) + 'px)';
+  }
+
+  /* --- 4. fonte: o marca-texto varre o inciso citado --- */
+  {
+    const p = t - CENAS[3].ini;
+    $('#marca-texto').style.right = ((1 - saida(fatia(p, 0.75, 1.85))) * 100) + '%';
+    const e = saida(fatia(p, 1.75, 2.45));
+    $('#etiqueta-fonte').style.opacity = e;
+    $('#etiqueta-fonte').style.transform = 'translateY(' + ((1 - e) * 12).toFixed(2) + 'px)';
+  }
+
+  /* --- 5. progresso: anel e barras enchem, aí entra a chamada --- */
+  {
+    const p = t - CENAS[4].ini;
+    const volta = 2 * Math.PI * 30;
+    const pct = Math.round(saida(fatia(p, 0.30, 1.90)) * 78);
+    $('#anel-frente').setAttribute('stroke-dasharray', volta);
+    $('#anel-frente').setAttribute('stroke-dashoffset', volta * (1 - pct / 100));
+    $('#anel-pct').textContent = pct + '%';
+    $$('#c5 .linha').forEach((el, i) => {
+      const rotulo = el.querySelector('[data-alvo]');
+      const v = Math.round(saida(fatia(p, 0.45 + i * 0.18, 1.95 + i * 0.18)) * Number(rotulo.dataset.alvo));
+      el.querySelector('.trilho i').style.width = v + '%';
+      rotulo.textContent = v + '%';
+    });
+    const c = saida(fatia(p, 2.60, 3.30));
+    $('#cta').style.opacity = c;
+    $('#cta').style.transform =
+      'translateY(' + ((1 - c) * 16).toFixed(2) + 'px) scale(' + (0.94 + 0.06 * c).toFixed(3) + ')';
+    $('#assinatura').style.opacity = saida(fatia(p, 3.20, 3.85));
+  }
+
+  /* --- linha de tempo do filme --- */
+  $('#barra-filme i').style.width = (limitar(t / DURACAO) * 100) + '%';
+}
+
+window.desenhar = desenhar;
+window.DURACAO = DURACAO;
+desenhar(0);
+</script>
+</body>
+</html>

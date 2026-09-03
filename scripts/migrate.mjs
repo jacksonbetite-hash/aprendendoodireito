@@ -16,7 +16,7 @@ const somenteSeed = process.argv.includes('--seed');
 const pool = new pg.Pool({
   connectionString:
     process.env.DATABASE_URL ??
-    'postgres://aprendendo:aprendendo@localhost:5432/aprendendoodireito',
+    'postgres://aprimore:aprimore@localhost:5432/aprimoreosaber',
 });
 
 async function esperarBanco(tentativas = 30) {

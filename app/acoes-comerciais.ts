@@ -8,6 +8,7 @@ import {
 } from '../lib/checkout.ts';
 import type { MeioPagamento } from '../lib/pagamento.ts';
 import type { Periodo, Produto } from '../lib/precos.ts';
+import { portalIdAtual } from '../lib/portal-consultas.ts';
 
 export interface EstadoComercial { erro?: string; ok?: string }
 
@@ -49,7 +50,9 @@ export async function acaoComprar(_e: EstadoComercial, dados: FormData): Promise
 
   let referencia: string;
   try {
-    const pedido = await abrirPedido(aluno.id, aluno.email, produto, periodo, materiaId, meio);
+    const pedido = await abrirPedido(
+      await portalIdAtual(), aluno.id, aluno.email, produto, periodo, materiaId, meio,
+    );
     referencia = pedido.referencia;
   } catch (err) {
     return { erro: (err as Error).message };

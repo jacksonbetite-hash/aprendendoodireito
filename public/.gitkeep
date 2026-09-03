@@ -1,0 +1,2 @@
+# Arquivos estáticos servidos em /. Mantido no repositório para que o
+# `COPY /app/public` do Dockerfile encontre o diretório mesmo vazio.

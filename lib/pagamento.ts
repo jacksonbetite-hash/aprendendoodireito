@@ -22,6 +22,13 @@ export interface Cobranca {
   meio: MeioPagamento;
   descricao: string;
   emailPagador: string;
+  /**
+   * Venda de portal (§5.10): divide na liquidação. `percentualRetido` é a
+   * NOSSA parte; o resto vai para a `walletId` do professor. Como cada
+   * gateway expressa isso é problema do adaptador — no Asaas, por
+   * exemplo, quem cria a cobrança fica com o restante automaticamente.
+   */
+  split?: { walletId: string; percentualRetido: number };
 }
 
 export interface CobrancaCriada {
@@ -36,9 +43,26 @@ export interface CobrancaCriada {
 
 export interface EventoPagamento {
   eventoId: string;
-  tipo: 'pagamento.confirmado' | 'pagamento.falhou' | 'assinatura.cancelada';
+  tipo: 'pagamento.confirmado' | 'pagamento.falhou' | 'assinatura.cancelada'
+      | 'subconta.aprovada' | 'subconta.recusada';
+  /** Nos eventos de subconta, carrega o id da subconta no gateway. */
   referencia: string;
   centavos: number;
+}
+
+/** Dados mínimos para abrir a subconta do professor (§5.10.2, etapa 2). */
+export interface DadosSubconta {
+  nome: string;
+  email: string;
+  /** CNPJ sem pontuação — subconta de pessoa física não existe (§8.2). */
+  cnpj: string;
+}
+
+export interface SubcontaCriada {
+  /** Identificador da subconta no gateway. */
+  idExterno: string;
+  /** Carteira para onde o split manda a parte do professor. */
+  walletId: string;
 }
 
 export interface Provedor {
@@ -46,6 +70,18 @@ export interface Provedor {
   /** Se false, a interface avisa que nenhuma cobrança real acontece. */
   cobraDeVerdade: boolean;
   criarCobranca(c: Cobranca): Promise<CobrancaCriada>;
+  /**
+   * Abre a subconta do professor. A criação devolve os identificadores na
+   * hora, mas a APROVAÇÃO é assíncrona — chega por webhook
+   * (`subconta.aprovada` / `subconta.recusada`), como no gateway real.
+   */
+  criarSubconta(d: DadosSubconta): Promise<SubcontaCriada>;
+  /**
+   * Liga a Conta Escrow da subconta com o prazo de retenção em dias
+   * (§8.2): o valor recebido só fica sacável depois do prazo — é o que
+   * cobre o reembolso de 7 dias do CDC num modelo com split.
+   */
+  habilitarEscrow(subcontaId: string, diasRetencao: number): Promise<void>;
   /** Valida a assinatura do webhook. Sem isso, qualquer um libera licença. */
   validarAssinatura(corpo: string, cabecalho: string | null): boolean;
   interpretarEvento(corpo: unknown): EventoPagamento | null;
@@ -92,7 +128,7 @@ export const simulado: Provedor = {
     // Formato inspirado no BR Code, só para a tela ter o que mostrar.
     const copiaECola =
       `00020126580014BR.GOV.BCB.PIX0136${idExterno}` +
-      `5204000053039865802BR5921APRENDENDO O DIREITO6009SAO PAULO` +
+      `5204000053039865802BR5916APRIMORE O SABER6009SAO PAULO` +
       `62070503***6304${randomBytes(2).toString('hex').toUpperCase()}`;
     return {
       idExterno,
@@ -102,13 +138,31 @@ export const simulado: Provedor = {
     };
   },
 
+  /**
+   * Subconta simulada: identificadores locais, aprovação pendente. A
+   * aprovação vem pelo webhook (`scripts/aprovar-subconta.mjs` faz o
+   * papel do gateway em desenvolvimento) — mesmo caminho da produção.
+   */
+  async criarSubconta(d) {
+    if (!d.cnpj) throw new Error('subconta exige CNPJ');
+    const sufixo = randomBytes(9).toString('hex');
+    return { idExterno: 'sub_' + sufixo, walletId: 'wal_' + sufixo };
+  },
+
+  async habilitarEscrow() {
+    // No simulado, habilitar é registrar que se pediu — quem guarda o
+    // prazo é a coluna `portal.escrow_dias`, e é ela que o adaptador
+    // real vai passar como daysToExpire.
+  },
+
   validarAssinatura: confereAssinatura,
 
   interpretarEvento(corpo) {
     const c = corpo as Partial<EventoPagamento>;
     if (!c || typeof c.referencia !== 'string' || typeof c.eventoId !== 'string') return null;
     if (c.tipo !== 'pagamento.confirmado' && c.tipo !== 'pagamento.falhou'
-        && c.tipo !== 'assinatura.cancelada') return null;
+        && c.tipo !== 'assinatura.cancelada'
+        && c.tipo !== 'subconta.aprovada' && c.tipo !== 'subconta.recusada') return null;
     return {
       eventoId: c.eventoId, tipo: c.tipo, referencia: c.referencia,
       centavos: Number(c.centavos ?? 0),
@@ -134,11 +188,16 @@ export function provedorAtual(): Provedor {
   }
 }
 
-/** Referência do pedido, curta e legível para o suporte. */
-export function novaReferencia(): string {
+/**
+ * Referência da cobrança, curta e legível para o suporte. O prefixo diz
+ * de que fluxo ela é — 'AD' é pedido de aluno, 'PF' é fatura de portal
+ * (§5.10.2) — e é por ele que o webhook decide quem processa o evento
+ * sem consultar duas tabelas.
+ */
+export function novaReferencia(prefixo: 'AD' | 'PF' = 'AD'): string {
   const d = new Date();
   const dia = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  return `AD-${dia}-${randomBytes(3).toString('hex').toUpperCase()}`;
+  return `${prefixo}-${dia}-${randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
 export function novoProtocolo(prefixo: string): string {

@@ -1,4 +1,4 @@
-# Aprendendo o Direito ⚖️
+# Aprimore o Saber ⚖️
 
 Plataforma de ensino jurídico descrita em [`discovery.md`](discovery.md) (v1.0,
 29/08/2026). Este repositório é a implantação da **Fase 1 (MVP)** do roadmap §14.
@@ -26,7 +26,7 @@ entrypoint e o catálogo já vem populado. Para parar: `docker compose down`
 Em rede corporativa com proxy que inspeciona TLS, passe a CA ao build:
 
 ```bash
-docker build --secret id=ca_bundle,src=/caminho/ca.crt -t aprendendoodireito .
+docker build --secret id=ca_bundle,src=/caminho/ca.crt -t aprimoreosaber .
 ```
 
 ### Primeiro administrador
@@ -45,10 +45,11 @@ Depois entre em `/entrar` e o menu de administração aparece.
 
 ```bash
 docker compose up -d db                 # só o Postgres (publicado em 127.0.0.1:5432)
-export DATABASE_URL=postgres://aprendendo:aprendendo@localhost:5432/aprendendoodireito
+export DATABASE_URL=postgres://aprimore:aprimore@localhost:5432/aprimoreosaber
 npm install && npm run migrate && npm run dev
+npm run leis      # importa o acervo do vade-mécum do Planalto (~3 min, precisa de rede)
 
-npm test          # 54 testes: licenças, senha, preços e checkout
+npm test          # 135 testes: licenças, senha, preços, checkout e vade-mécum
 npm run contraste # 16 pares de cor contra o WCAG AA
 SENHA_ADMIN=... npm run e2e   # 58 verificações no navegador, com a app de pé
 #   (CHROMIUM=/caminho/chromium se o Playwright não achar o navegador)
@@ -65,7 +66,7 @@ trial e licença promocional ativos, para o fluxo do aluno ser navegável na hor
 | **Motor de licenças §6.3** | `lib/licenca.ts` — `podeAcessar` resolvendo escopo, origem, status, vigência e cota do trial. **29 testes** cobrem a matriz de 36 combinações (mitigação do risco §15.8) |
 | **Camadas de acesso §6.1** | Aberta, trial com cota de conteúdo, licença por matéria, promocional e passe — todas somam, nunca se anulam |
 | **Anatomia da aula §5.3** | Vídeo com marca d'água por aluno, resumo, dispositivos vinculados, material e exercício. A regra "aula sem exercício não publica" é aplicada no seed |
-| **Vade-mécum §5.4** | Busca full-text em português com stemming, tolerante a acento, com apelidos indexados e deep link bidirecional aula ↔ artigo |
+| **Vade-mécum §5.4** | **22 normas e 7.929 artigos** importados dos textos consolidados do Planalto (`npm run leis`). Busca que responde enquanto se digita: entende número de artigo com sigla de norma (“art. 5º CF”, “121 do CP”), texto integral com stemming e prefixo, sem exigir acento; deep link bidirecional aula ↔ artigo |
 | **Exercícios §5.5** | Correção imediata com comentário em todas as alternativas; respostas gravadas alimentam estatística e caderno de erros |
 | **Área do aluno §5.2** | Continue de onde parou, progresso por matéria, licenças com escopo e origem, caderno de erros |
 | **Identidade visual §9** | Design system "Direito Leve" (terracota, teal e mostarda; Montserrat + Quicksand) aplicado a todas as telas, conforme o material entregue. Ver [`docs/identidade-visual.md`](docs/identidade-visual.md) |
@@ -84,8 +85,10 @@ Pagar.me (§8.2) é escrever um módulo que implemente `Provedor`; nenhuma tela
 muda. Pix Automático depende dessa escolha.
 
 Também faltam: painel do professor e fechamento de contas (§5.6),
-publicidade (§5.7), mural de vagas (§5.7.1), diagnóstico e plano de ensino
-(§5.8), hospedagem real de vídeo (§10). O player é um placeholder que já
+publicidade (§5.7), o **autosserviço do anunciante no mural de vagas** (§5.7.1
+— a vitrine pública está no ar, o cadastro do anunciante, a fila de moderação e
+as métricas por vaga não), diagnóstico e plano de ensino (§5.8), hospedagem
+real de vídeo (§10). O player é um placeholder que já
 carrega a marca d'água com os dados do aluno.
 
 Da autenticação faltam **magic link e Google** (§10) e, importante, o
@@ -103,6 +106,8 @@ conciliação) depende do gateway e vem junto com ele.
 │   ├── materia/[slug]/       # assuntos e aulas, com cadeado por licença
 │   ├── aula/[slug]/          # player, abas, vade-mécum lateral e exercício
 │   ├── vademecum/            # consulta aberta com busca
+│   ├── blog/                 # artigos abertos de todas as áreas (§5.5)
+│   ├── vagas/                # mural de vagas e estágios (§5.7.1)
 │   ├── planos/ · painel/     # licenças e área do aluno
 │   └── api/resposta/         # grava resposta de exercício
 │   ├── entrar/ · cadastrar/  # autenticação
@@ -118,10 +123,13 @@ conciliação) depende do gateway e vem junto com ele.
 │   ├── admin.ts              # operações administrativas, todas auditadas
 │   ├── precos.ts             # parte pura (vai ao navegador)
 │   ├── precos-consultas.ts   # consultas de preço (só servidor)
-│   ├── catalogo.ts · vademecum.ts · exercicio.ts · sessao.ts · cache.ts · db.ts
+│   ├── blog.ts · vagas.ts    # artigos publicados e mural de vagas
+│   ├── planalto.ts              # leitor dos textos consolidados (HTML → artigos)
+│   ├── vademecum.ts · vademecum-consulta.ts · vademecum-texto.ts
+│   ├── catalogo.ts · exercicio.ts · sessao.ts · cache.ts · db.ts
 │   └── *.test.ts             # licenças, senha, preços
 ├── db/                       # migrações e seed, aplicadas em ordem
-├── scripts/                  # migrate.mjs · criar-admin.mjs · contraste.mjs
+├── scripts/                  # migrate.mjs · importar-leis.mjs · criar-admin.mjs · contraste.mjs
 ├── testes-e2e/               # verificações no navegador
 ├── docs/identidade-visual.md
 └── prototipo/                # telas estáticas iniciais (histórico)
@@ -162,7 +170,8 @@ Do §16 (decisões pendentes) e do §14 (roadmap):
    o critério é split de pagamento e Pix Automático, não a taxa
 2. **2FA para admin e professor** (§10), antes de o admin sair do ambiente local
 3. Fechar a **ordem das ondas** — o seed adota a sugestão do §16.1, a confirmar
-4. Ingestão do acervo completo do vade-mécum via LexML, com rotina de atualização
+4. **Rotina de atualização do acervo** — `npm run leis` já reimporta no lugar,
+   preservando vínculos e apelidos; falta agendá-la e avisar o que mudou
 5. Definir o timing do fluxo de menores e consentimento parental (§16.8)
 6. Job diário da régua de inatividade (§6.5): avisos aos 10 e 11 meses e
    bloqueio aos 12 — o schema e a tela já preveem, o job ainda não existe

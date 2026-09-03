@@ -13,7 +13,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const r = await queryOne<{ materias: number }>(
-      `SELECT count(*)::int AS materias FROM materia WHERE status = 'publicado'`,
+      // Portal 0 = a plataforma (§5.10). Somar os portais dos professores
+      // faria o número da saúde crescer com a base de clientes, e ele
+      // serve para dizer se o NOSSO catálogo está de pé.
+      `SELECT count(*)::int AS materias FROM materia
+        WHERE status = 'publicado' AND portal_id = 0`,
     );
     return NextResponse.json({
       ok: true, banco: 'conectado', materiasPublicadas: r?.materias ?? 0,

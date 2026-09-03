@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { query, queryOne } from './db.ts';
 import { usuarioPorToken, COOKIE_SESSAO, type UsuarioSessao } from './auth.ts';
+import { portalIdAtual } from './portal-consultas.ts';
 import type { Espectador, Licenca, StatusConta } from './licenca.ts';
 
 /**
@@ -18,9 +19,11 @@ export interface Aluno {
 }
 
 export async function alunoAtual(): Promise<Aluno | null> {
+  // §5.10: quem é o aluno depende de em qual portal a pergunta foi feita.
+  const portalId = await portalIdAtual();
   const token = (await cookies()).get(COOKIE_SESSAO)?.value;
   if (token) {
-    const u = await usuarioPorToken(token);
+    const u = await usuarioPorToken(token, portalId);
     if (u) return u as Aluno;
   }
 
@@ -28,8 +31,8 @@ export async function alunoAtual(): Promise<Aluno | null> {
   if (demo && process.env.NODE_ENV !== 'production') {
     return queryOne<Aluno>(
       `SELECT id, nome, email, papel, status_conta AS "statusConta"
-         FROM usuario WHERE lower(email) = lower($1)`,
-      [demo],
+         FROM usuario WHERE portal_id = $1 AND lower(email) = lower($2)`,
+      [portalId, demo],
     );
   }
   return null;
@@ -73,7 +76,13 @@ export async function espectadorAtual(): Promise<Espectador> {
 export interface ProgressoMateria {
   materiaSlug: string; materiaNome: string;
   aulasConcluidas: number; aulasTotal: number; percentual: number;
+  /** '' no próprio portal; '/parceiros/<mascara>' quando o curso é de parceiro. */
+  base: string;
 }
+
+/** Prefixo dos links de curso/aula quando o curso é de outro portal (§5.10.2, etapa 5). */
+const BASE_DO_CURSO = `CASE WHEN m.portal_id = u.portal_id THEN ''
+                            ELSE '/parceiros/' || pt.mascara END AS base`;
 
 export function progressoPorMateria(usuarioId: number) {
   return query<ProgressoMateria>(
@@ -82,31 +91,75 @@ export function progressoPorMateria(usuarioId: number) {
             count(au.id)::int AS "aulasTotal",
             CASE WHEN count(au.id) = 0 THEN 0
                  ELSE round(100.0 * count(*) FILTER (WHERE p.concluida) / count(au.id))::int
-            END AS percentual
+            END AS percentual,
+            ${BASE_DO_CURSO}
        FROM materia m
+       JOIN portal pt ON pt.id = m.portal_id
+       JOIN usuario u ON u.id = $1
        JOIN assunto s ON s.materia_id = m.id
        JOIN aula au ON au.assunto_id = s.id AND au.status = 'publicado'
        LEFT JOIN progresso_aula p ON p.aula_id = au.id AND p.usuario_id = $1
+      -- O passe CATALOGO cobre "todas as matérias" de UM portal: o da
+      -- licença (que é o do aluno). Curso de parceiro (§5.10.2, etapa 5)
+      -- só entra por licença da própria matéria.
       WHERE EXISTS (SELECT 1 FROM licenca l WHERE l.usuario_id = $1
-                      AND (l.escopo = 'CATALOGO' OR l.materia_id = m.id))
-      GROUP BY m.slug, m.nome, m.ordem
+                      AND (l.materia_id = m.id
+                           OR (l.escopo = 'CATALOGO' AND m.portal_id = l.portal_id)))
+      GROUP BY m.slug, m.nome, m.ordem, m.portal_id, u.portal_id, pt.mascara
       ORDER BY m.ordem`,
     [usuarioId],
+  );
+}
+
+/**
+ * Onde o aluno parou nesta aula — o que o player usa para retomar.
+ * Ausente (null) é aula nunca aberta.
+ */
+export function progressoDaAula(usuarioId: number, aulaId: number) {
+  return queryOne<{ segundosAssistidos: number; concluida: boolean }>(
+    `SELECT segundos_assistidos AS "segundosAssistidos", concluida
+       FROM progresso_aula WHERE usuario_id = $1 AND aula_id = $2`,
+    [usuarioId, aulaId],
+  );
+}
+
+/**
+ * Grava o avanço. Duas decisões que evitam surpresa no painel:
+ *
+ *  - `segundos` nunca anda para trás. Quem volta a barra para rever um
+ *    trecho não deve perder a marca de onde já tinha chegado.
+ *  - `concluida` é porta de mão única: uma vez concluída, rever a aula
+ *    não a desmarca.
+ */
+export async function registrarProgresso(
+  usuarioId: number, aulaId: number, segundos: number, concluida: boolean,
+): Promise<void> {
+  await query(
+    `INSERT INTO progresso_aula (usuario_id, aula_id, segundos_assistidos, concluida)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (usuario_id, aula_id) DO UPDATE
+        SET segundos_assistidos = greatest(progresso_aula.segundos_assistidos, EXCLUDED.segundos_assistidos),
+            concluida           = progresso_aula.concluida OR EXCLUDED.concluida,
+            atualizado_em       = now()`,
+    [usuarioId, aulaId, segundos, concluida],
   );
 }
 
 export function continuarDeOndeParou(usuarioId: number) {
   return queryOne<{
     slug: string; titulo: string; materiaNome: string;
-    segundosAssistidos: number; duracaoSegundos: number;
+    segundosAssistidos: number; duracaoSegundos: number; base: string;
   }>(
     `SELECT au.slug, au.titulo, m.nome AS "materiaNome",
             p.segundos_assistidos AS "segundosAssistidos",
-            au.duracao_segundos AS "duracaoSegundos"
+            au.duracao_segundos AS "duracaoSegundos",
+            ${BASE_DO_CURSO}
        FROM progresso_aula p
        JOIN aula au ON au.id = p.aula_id
        JOIN assunto s ON s.id = au.assunto_id
        JOIN materia m ON m.id = s.materia_id
+       JOIN portal pt ON pt.id = m.portal_id
+       JOIN usuario u ON u.id = p.usuario_id
       WHERE p.usuario_id = $1 AND NOT p.concluida
       ORDER BY p.atualizado_em DESC LIMIT 1`,
     [usuarioId],
@@ -130,13 +183,18 @@ export async function estatisticas(usuarioId: number) {
 
 /** Caderno de erros (§5.2): questões erradas que ainda não foram refeitas. */
 export function cadernoDeErros(usuarioId: number) {
-  return query<{ questaoId: number; enunciado: string; aulaSlug: string; aulaTitulo: string }>(
+  return query<{ questaoId: number; enunciado: string; aulaSlug: string; aulaTitulo: string; base: string }>(
     `SELECT DISTINCT ON (q.id) q.id AS "questaoId", q.enunciado,
-            au.slug AS "aulaSlug", au.titulo AS "aulaTitulo"
+            au.slug AS "aulaSlug", au.titulo AS "aulaTitulo",
+            ${BASE_DO_CURSO}
        FROM resposta r
        JOIN questao q ON q.id = r.questao_id
        JOIN exercicio e ON e.id = q.exercicio_id
        JOIN aula au ON au.id = e.aula_id
+       JOIN assunto s ON s.id = au.assunto_id
+       JOIN materia m ON m.id = s.materia_id
+       JOIN portal pt ON pt.id = m.portal_id
+       JOIN usuario u ON u.id = r.usuario_id
       WHERE r.usuario_id = $1
         AND NOT EXISTS (
           SELECT 1 FROM resposta r2

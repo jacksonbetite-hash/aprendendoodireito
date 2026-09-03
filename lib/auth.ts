@@ -76,14 +76,21 @@ export interface UsuarioSessao {
   statusConta: 'ATIVA' | 'INATIVA_AVISO' | 'BLOQUEADA_INATIVIDADE' | 'ENCERRADA';
 }
 
-export function usuarioPorToken(token: string) {
+/**
+ * §5.10: a base de alunos é separada por portal, então a sessão também é.
+ * O cookie é por host e já não atravessa subdomínios, mas confiar só nisso
+ * deixaria a separação a cargo do navegador. Aqui ela é verificada: token
+ * de aluno do portal 7 não abre sessão no portal 3 nem na plataforma.
+ */
+export function usuarioPorToken(token: string, portalId: number) {
   return queryOne<UsuarioSessao>(
     `SELECT u.id, u.nome, u.email, u.papel, u.status_conta AS "statusConta"
        FROM sessao s JOIN usuario u ON u.id = s.usuario_id
       WHERE s.token_hash = $1
+        AND u.portal_id = $2
         AND s.revogada_em IS NULL
         AND s.expira_em > now()`,
-    [hashToken(token)],
+    [hashToken(token), portalId],
   );
 }
 
@@ -103,23 +110,31 @@ export async function revogarSessoesDo(usuarioId: number): Promise<void> {
 }
 
 
-export async function cadastrar(nome: string, email: string, senha: string) {
+/**
+ * O mesmo e-mail pode existir na plataforma e no portal de um professor:
+ * são bases separadas (§5.10), e quem cadastra num portal não vira aluno
+ * do outro. Por isso o conflito é resolvido contra
+ * `usuario_email_por_portal` — o índice global de e-mail deixou de existir
+ * em `db/018_portal.sql`, e um `ON CONFLICT (lower(email))` aqui quebraria
+ * o cadastro inteiro.
+ */
+export async function cadastrar(portalId: number, nome: string, email: string, senha: string) {
   const limpo = email.trim().toLowerCase();
   const linha = await queryOne<{ id: number }>(
-    `INSERT INTO usuario (nome, email, senha_hash, papel)
-     VALUES ($1, $2, $3, 'aluno')
-     ON CONFLICT (lower(email)) DO NOTHING
+    `INSERT INTO usuario (portal_id, nome, email, senha_hash, papel)
+     VALUES ($1, $2, $3, $4, 'aluno')
+     ON CONFLICT (portal_id, lower(email)) DO NOTHING
      RETURNING id`,
-    [nome.trim().slice(0, 120), limpo, await gerarHashSenha(senha)],
+    [portalId, nome.trim().slice(0, 120), limpo, await gerarHashSenha(senha)],
   );
-  return linha?.id ?? null;   // null = e-mail já cadastrado
+  return linha?.id ?? null;   // null = e-mail já cadastrado neste portal
 }
 
-export async function autenticar(email: string, senha: string) {
+export async function autenticar(portalId: number, email: string, senha: string) {
   const u = await queryOne<{ id: number; senhaHash: string | null; statusConta: string }>(
     `SELECT id, senha_hash AS "senhaHash", status_conta AS "statusConta"
-       FROM usuario WHERE lower(email) = lower($1)`,
-    [email.trim()],
+       FROM usuario WHERE portal_id = $1 AND lower(email) = lower($2)`,
+    [portalId, email.trim()],
   );
   // Confere a senha mesmo sem usuário, com um hash descartável: sem isso o
   // tempo de resposta revelaria quais e-mails existem.

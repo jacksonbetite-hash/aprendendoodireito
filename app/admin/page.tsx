@@ -4,6 +4,7 @@ import { Icone } from '../componentes.tsx';
 import { resumoOperacao, listarAuditoria } from '../../lib/admin.ts';
 import { brl } from '../../lib/precos.ts';
 import { tabelaVigente } from '../../lib/precos-consultas.ts';
+import { PORTAL_PLATAFORMA } from '../../lib/portal.ts';
 
 export const metadata: Metadata = { title: 'Administração' };
 
@@ -12,7 +13,7 @@ const QUANDO = (d: Date) =>
 
 export default async function VisaoGeral() {
   const [resumo, auditoria, tabela] = await Promise.all([
-    resumoOperacao(), listarAuditoria(12), tabelaVigente(),
+    resumoOperacao(), listarAuditoria(12), tabelaVigente(PORTAL_PLATAFORMA),
   ]);
 
   const indicadores = [
@@ -20,7 +21,7 @@ export default async function VisaoGeral() {
       selo: 'selo-secundaria', nota: 'contas com papel de aluno' },
     { rotulo: 'Licenças vigentes', valor: String(resumo?.licencasAtivas ?? 0), icone: 'verified_user',
       selo: 'selo-primaria', destaque: true, nota: `${resumo?.trials ?? 0} são testes em andamento` },
-    { rotulo: 'Matérias publicadas', valor: String(resumo?.materiasPublicadas ?? 0), icone: 'menu_book',
+    { rotulo: 'Cursos publicados', valor: String(resumo?.materiasPublicadas ?? 0), icone: 'menu_book',
       selo: 'selo-terciaria', nota: 'com exercício completo' },
     { rotulo: 'Exercícios em 7 dias', valor: String(resumo?.respostas7d ?? 0), icone: 'edit_note',
       selo: 'selo-neutra', nota: 'respostas registradas' },
@@ -34,7 +35,6 @@ export default async function VisaoGeral() {
       <div className="grade-4">
         {indicadores.map((i) => (
           <div className="cartao indicador" key={i.rotulo}>
-            <span className={`selo ${i.selo}`}><Icone nome={i.icone} /></span>
             <div className="rotulo">{i.rotulo}</div>
             <div className={`valor${i.destaque ? ' destaque' : ''}`}>{i.valor}</div>
             <div className="nota">{i.nota}</div>
@@ -45,7 +45,7 @@ export default async function VisaoGeral() {
       <div className="cartao">
         <h2 className="headline-md" style={{ marginBottom: 6 }}>Tabela de valores</h2>
         <p className="caption suave" style={{ marginBottom: 16 }}>
-          Matéria avulsa a <strong>{brl(tabela.MATERIA.mensal)}</strong>/mês ·
+          Curso avulso a <strong>{brl(tabela.MATERIA.mensal)}</strong>/mês ·
           passe completo a <strong>{brl(tabela.CATALOGO.mensal)}</strong>/mês.{' '}
           <Link href="/admin/precos" style={{ color: 'var(--primary)', fontWeight: 700 }}>Alterar</Link>
         </p>
@@ -77,10 +77,12 @@ export default async function VisaoGeral() {
       </div>
 
       <div className="aviso">
-        <strong>Ainda fora do admin:</strong> financeiro e conciliação com gateway (§8),
-        cadastro de professores e fechamento de contas (§5.6), anunciantes (§5.7) e moderação
-        do mural de vagas (§5.7.1). O §10 também pede <strong>2FA obrigatório</strong> para
-        admin e professor — não implementado.
+        <strong>Ainda fora do admin:</strong> financeiro e conciliação com o gateway (§8),
+        fechamento de contas do professor e apuração de comissão (§5.6.1), anunciantes (§5.7),
+        cadastro da legislação do vade-mécum (§5.4) e o autosserviço do anunciante no mural —
+        hoje a vaga entra pela nossa mão e sai pela moderação, mas quem publica ainda não tem
+        tela própria (§5.7.1). O §10 também pede <strong>2FA obrigatório</strong> para admin e
+        professor — não implementado.
       </div>
     </>
   );

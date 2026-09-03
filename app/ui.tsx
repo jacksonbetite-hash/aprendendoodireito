@@ -18,6 +18,9 @@ const TRACOS: Record<string, React.ReactNode> = {
   balance: <><path d="M12 3v18M7 21h10M12 6 4 8m8-2 8 2" /><path d="M4 8 1.5 14a3.5 3.5 0 0 0 5 0L4 8Z" /><path d="M20 8l-2.5 6a3.5 3.5 0 0 0 5 0L20 8Z" /></>,
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.6-3.6" /></>,
   play_arrow: <path d="M8 5.5v13l11-6.5-11-6.5Z" />,
+  pause: <><path d="M9.5 5v14M14.5 5v14" /></>,
+  volume_up: <><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4v-5Z" /><path d="M15.5 9.4a3.6 3.6 0 0 1 0 5.2" /><path d="M18 7a7 7 0 0 1 0 10" /></>,
+  volume_off: <><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4v-5Z" /><path d="m16 9.5 5 5M21 9.5l-5 5" /></>,
   play_circle: <><circle cx="12" cy="12" r="9" /><path d="M10.5 8.8v6.4l5-3.2-5-3.2Z" /></>,
   menu_book: <><path d="M12 6.5C10.6 5.3 8.6 4.5 6 4.5c-1 0-2 .1-2.8.3v13c.9-.2 1.8-.3 2.8-.3 2.6 0 4.6.8 6 2 1.4-1.2 3.4-2 6-2 1 0 1.9.1 2.8.3v-13c-.9-.2-1.8-.3-2.8-.3-2.6 0-4.6.8-6 2Z" /><path d="M12 6.5v13" /></>,
   quiz: <><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9.2 9.6a2.8 2.8 0 1 1 3.6 2.7c-.5.2-.8.6-.8 1.1v.4" /><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none" /></>,
@@ -27,6 +30,7 @@ const TRACOS: Record<string, React.ReactNode> = {
   check_circle: <><circle cx="12" cy="12" r="9" /><path d="m8 12.3 2.7 2.7L16 9.5" /></>,
   lock: <><rect x="4.5" y="10" width="15" height="10.5" rx="2.5" /><path d="M8 10V7.5a4 4 0 0 1 8 0V10" /></>,
   chevron_right: <path d="m9.5 5.5 6.5 6.5-6.5 6.5" />,
+  expand_more: <path d="m5.5 9 6.5 6.5L18.5 9" />,
   lightbulb: <><path d="M9.2 17.5h5.6" /><path d="M10 21h4" /><path d="M12 3a6 6 0 0 0-3.6 10.8c.5.4.8 1 .8 1.6v.6h5.6v-.6c0-.6.3-1.2.8-1.6A6 6 0 0 0 12 3Z" /></>,
   edit_note: <><path d="M3.5 6.5h13M3.5 11.5h9M3.5 16.5h6" /><path d="m20.5 10-6.5 6.5-3 .8.8-3L18.3 8a1.6 1.6 0 0 1 2.2 2.2Z" /></>,
   dashboard: <><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="4.5" rx="2" /><rect x="3.5" y="13.5" width="7" height="7" rx="2" /><rect x="13.5" y="11" width="7" height="9.5" rx="2" /></>,
@@ -59,6 +63,30 @@ const TRACOS: Record<string, React.ReactNode> = {
   description: <><path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5L14 3.5Z" /><path d="M13.5 3.8V9h5" /><path d="M8.5 13h7M8.5 16.5h5" /></>,
   workspace_premium: <><circle cx="12" cy="9" r="5.5" /><path d="m8.5 13.5-1.5 7 5-2.4 5 2.4-1.5-7" /></>,
   timer: <><circle cx="12" cy="13.5" r="7" /><path d="M12 9.5v4M9.5 3.5h5" /></>,
+  insights: <><path d="M4 19V5" /><path d="M4 16.5 9 11l3.5 3.5L20 7" /><circle cx="20" cy="7" r="1.6" /></>,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 7.8v.6" /></>,
+  format_quote: (
+    <>
+      <path d="M9.5 6.5C7 7.6 5.5 9.9 5.5 12.6v4.9h5.2v-5.2H8.3c0-1.9.6-3.4 1.9-4.3Z" />
+      <path d="M18 6.5c-2.5 1.1-4 3.4-4 6.1v4.9h5.2v-5.2h-2.4c0-1.9.6-3.4 1.9-4.3Z" />
+    </>
+  ),
+
+  /* Sumário do vade-mécum: cada norma se reconhece pela forma antes de ser
+     lida. São 22 códigos numa lista — sem ícone próprio, quem consulta o
+     mesmo todo dia teria de ler 22 nomes para achar o de sempre. */
+  history_edu: <><path d="M4 5.5c2.6-.9 5.4-.9 8 0v11c-2.6-.9-5.4-.9-8 0v-11Z" /><path d="M12 5.5c1-.4 2-.6 3-.7" /><circle cx="17.5" cy="14.5" r="4" /><path d="M17.5 12.8v1.9l1.3.9" /></>,
+  policy: <><path d="M12 3.2 5 6v6c0 4 3 7 7 8.8" /><path d="M19 12V6l-7-2.8" /><circle cx="16.5" cy="15.5" r="3" /><path d="m18.7 17.7 2.3 2.3" /></>,
+  receipt_long: <><path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4v-17Z" /><path d="M9 8h6M9 11.5h6M9 15h4" /></>,
+  child_care: <><circle cx="12" cy="12" r="7.5" /><path d="M19.5 9.5a2.2 2.2 0 0 1 0 5" /><path d="M4.5 9.5a2.2 2.2 0 0 0 0 5" /><path d="M9.5 11v.6M14.5 11v.6" /><path d="M9.8 14.8a3 3 0 0 0 4.4 0" /></>,
+  elderly: <><circle cx="12" cy="5" r="2.2" /><path d="M12 8.5c-2 0-3.2 1.3-3.5 3.2l-.7 4.3h2l.7 4.5h3l.5-8" /><path d="M17.5 10.5v10" /></>,
+  foundation: <><path d="M3.5 20.5h17" /><path d="M3.5 16.5h17" /><path d="M6.5 16.5v-5M12 16.5v-5M17.5 16.5v-5" /><path d="m12 3.5 8 5H4l8-5Z" /></>,
+  shield_person: <><path d="M12 3.2 5 6v6.2c0 4.4 3 7.5 7 8.8 4-1.3 7-4.4 7-8.8V6l-7-2.8Z" /><circle cx="12" cy="10.5" r="2" /><path d="M8.8 16.5a3.4 3.4 0 0 1 6.4 0" /></>,
+  report: <><path d="M8.5 3.5h7L20.5 8.5v7L15.5 20.5h-7L3.5 15.5v-7L8.5 3.5Z" /><path d="M12 8v4.5" /><circle cx="12" cy="16" r=".9" fill="currentColor" stroke="none" /></>,
+  badge: <><rect x="3" y="6.5" width="18" height="14" rx="2.5" /><path d="M9.5 6.5V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v1.5" /><circle cx="12" cy="12" r="2" /><path d="M8.8 17.5a3.4 3.4 0 0 1 6.4 0" /></>,
+  fact_check: <><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" /><path d="M7 9h6M7 12.5h4" /><path d="m14 15.2 1.8 1.8 3.2-3.5" /></>,
+  medication: <><rect x="5.5" y="9" width="13" height="11.5" rx="3" /><path d="M12 12.5v4.5M9.8 14.8h4.4" /><path d="M7 6h10l-1 3H8L7 6Z" /></>,
+  savings: <><path d="M4 12.5a6 6 0 0 1 6-6h3a6 6 0 0 1 5.6 3.9l1.9.9v3.4l-2 .4a6 6 0 0 1-2 2.4v2h-3v-1.2h-3V20H7.5v-2A6 6 0 0 1 4 12.5Z" /><circle cx="15.5" cy="12" r=".9" fill="currentColor" stroke="none" /><path d="M9 4.5a2.5 2.5 0 0 1 4 1.8" /></>,
 };
 
 export function Icone(
@@ -79,11 +107,22 @@ export function Icone(
   );
 }
 
-export function Marca({ href = '/' }: { href?: string }) {
+/** `nome` troca o rótulo — no portal de um professor, a marca é a dele (§5.10). */
+export function Marca({ href = '/', nome }: { href?: string; nome?: string }) {
   return (
     <Link className="marca" href={href}>
-      <span className="simbolo mono"><Icone nome="balance" tamanho={22} /></span>
-      <span className="rotulo">Aprendendo o Direito</span>
+      {/* Símbolo: a lâmpada do "saber" dentro da cápsula da marca. Vai em
+          SVG aqui, e não como imagem, para a marca acompanhar a cor do
+          tema e nunca depender de uma requisição de rede. */}
+      <svg className="marca-simbolo" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect width="32" height="32" rx="10" fill="var(--primary-texto)" />
+        <path
+          d="M16 8.5a5.4 5.4 0 0 0-3.2 9.75c.5.37.8.94.8 1.55v.2h4.8v-.2c0-.61.3-1.18.8-1.55A5.4 5.4 0 0 0 16 8.5Z"
+          fill="none" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"
+        />
+        <path d="M14.1 23h3.8" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+      <span className="rotulo">{nome ?? 'Aprimore o Saber'}</span>
     </Link>
   );
 }

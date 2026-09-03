@@ -32,7 +32,7 @@ check(await p.locator('a[href="/cadastrar"]').first().isVisible(), 'cabeçalho o
 
 // aula licenciada continua bloqueada para visitante
 await p.goto(base + '/aula/direitos-fundamentais-na-pratica', { waitUntil: 'load' });
-check(await p.getByText('faz parte de uma matéria licenciada').first().isVisible(),
+check(await p.getByText('faz parte de um curso licenciado').first().isVisible(),
   'visitante vê a oferta na aula licenciada');
 // mas a amostra grátis abre
 await p.goto(base + '/aula/o-que-e-uma-constituicao', { waitUntil: 'load' });
@@ -115,7 +115,7 @@ await p.click('form.formulario button[type=submit]');
 await p.waitForURL('**/painel*', { timeout: 20000 });
 check(p.url().includes('/painel'), 'cadastro válido entra direto no painel');
 check(await p.getByText('Rafael').first().isVisible(), 'painel saúda o novo aluno');
-check(await p.getByText('não tem matéria liberada').first().isVisible().catch(() => false)
+check(await p.getByText('não tem curso liberado').first().isVisible().catch(() => false)
    || await p.getByText('Você ainda não').first().isVisible().catch(() => false),
   'aluno novo vê estado vazio de progresso');
 

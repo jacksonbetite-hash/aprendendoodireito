@@ -1,5 +1,5 @@
 /* =============================================================
-   Aprendendo o Direito — protótipo
+   Aprimore o Saber — protótipo
    Interações do lado do cliente. No sistema real (§10 do
    discovery) isto vira Next.js consumindo a API; aqui os dados
    são fixos, só para o protótipo ser navegável.

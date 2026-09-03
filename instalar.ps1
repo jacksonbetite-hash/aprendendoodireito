@@ -1,5 +1,5 @@
 <#
-  Aprendendo o Direito — instalação local (Windows)
+  Aprimore o Saber — instalação local (Windows)
 
   Sobe o sistema completo na sua máquina com Docker Desktop:
   banco PostgreSQL, migrações, catálogo populado e a aplicação no ar.
@@ -65,7 +65,7 @@ Passo 'Construindo a imagem (a primeira vez leva alguns minutos)'
 #   $env:CA_BUNDLE = 'C:\caminho\ca.crt'
 if ($env:CA_BUNDLE) {
   Ok "usando CA extra: $env:CA_BUNDLE"
-  docker build --secret "id=ca_bundle,src=$env:CA_BUNDLE" -t aprendendoodireito:latest .
+  docker build --secret "id=ca_bundle,src=$env:CA_BUNDLE" -t aprimoreosaber:latest .
 } else {
   docker compose build
 }
@@ -114,7 +114,7 @@ if (-not $pronto) {
 Ok 'Aplicacao no ar.'
 
 Passo 'Criando o administrador'
-$existe = docker compose exec -T db psql -U aprendendo -d aprendendoodireito -t -A -c "SELECT count(*) FROM usuario WHERE papel='admin'"
+$existe = docker compose exec -T db psql -U aprimore -d aprimoreosaber -t -A -c "SELECT count(*) FROM usuario WHERE papel='admin'"
 if ($existe.Trim() -eq '0') {
   $email = Read-Host 'E-mail do administrador'
   $nome  = Read-Host 'Nome do administrador'
@@ -133,7 +133,7 @@ if ($existe.Trim() -eq '0') {
 Write-Host @"
 
   ============================================================
-   Aprendendo o Direito esta rodando
+   Aprimore o Saber esta rodando
 
    Site e sistema .... http://localhost:$porta
    Area do aluno ..... http://localhost:$porta/painel

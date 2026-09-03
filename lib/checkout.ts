@@ -4,6 +4,8 @@ import {
   type MeioPagamento, type EventoPagamento,
 } from './pagamento.ts';
 import type { Periodo, Produto } from './precos.ts';
+import { MOTIVO_SEM_SUBCONTA } from './portal-subconta.ts';
+import { indicacaoViva, consumirIndicacao } from './portal-indicacao.ts';
 
 /**
  * Checkout — §8 do discovery.
@@ -45,45 +47,128 @@ export interface PedidoCriado {
   copiaECola?: string; instrucao: string; expiraEm: Date; meio: MeioPagamento;
 }
 
-/** Abre um pedido e cria a cobrança no gateway. */
+/**
+ * Abre um pedido e cria a cobrança no gateway.
+ *
+ * `portalId` (§5.10) decide de quem é a venda: preço, matéria e aluno têm
+ * de ser todos do mesmo portal. As chaves compostas de `db/018_portal.sql`
+ * recusariam a combinação errada de qualquer forma, mas errar aqui daria
+ * um erro de banco no meio do checkout — e o aluno já teria visto o Pix.
+ */
 export async function abrirPedido(
-  usuarioId: number, email: string, produto: Produto, periodo: Periodo,
+  portalId: number, usuarioId: number, email: string, produto: Produto, periodo: Periodo,
   materiaId: number | null, meio: MeioPagamento,
 ): Promise<PedidoCriado> {
   if (produto === 'MATERIA' && materiaId === null) throw new Error('escolha a matéria');
   if (produto === 'CATALOGO') materiaId = null;
+  // BIGINT chega como string de quem leu o id do banco; a comparação
+  // "de quem é o curso" abaixo precisa de número dos dois lados.
+  portalId = Number(portalId);
 
   const preco = await queryOne<{ centavos: number }>(
     `SELECT centavos FROM preco
-      WHERE produto = $1 AND periodo = $2 AND vigente_ate IS NULL AND vigente_de <= current_date`,
-    [produto, periodo],
+      WHERE portal_id = $1 AND produto = $2 AND periodo = $3
+        AND vigente_ate IS NULL AND vigente_de <= current_date`,
+    [portalId, produto, periodo],
   );
   if (!preco) throw new Error('não há preço vigente para este produto');
 
-  const nomeMateria = materiaId
-    ? (await queryOne<{ nome: string }>('SELECT nome FROM materia WHERE id = $1', [materiaId]))?.nome
+  // §5.10.2, etapa 5 — a matéria é do portal do aluno, OU é de um
+  // parceiro que a pôs na nossa vitrine e o comprador é da plataforma.
+  // Portal de professor nunca vende curso de outro (o CHECK do banco
+  // recusaria de qualquer forma; aqui a mensagem é humana).
+  const materia = materiaId
+    ? await queryOne<{ nome: string; portalId: number; portalStatus: string; comissao: string | null }>(
+        `SELECT m.nome, m.portal_id::int AS "portalId", p.status AS "portalStatus",
+                c.comissao_vitrine_pp AS comissao
+           FROM materia m
+           JOIN portal p ON p.id = m.portal_id
+           LEFT JOIN portal_contrato c
+                  ON c.portal_id = m.portal_id AND c.vigente_ate IS NULL AND c.aceito_em IS NOT NULL
+          WHERE m.id = $1
+            AND (m.portal_id = $2
+                 OR ($2 = 0 AND m.na_vitrine_plataforma AND m.status = 'publicado'))`,
+        [materiaId, portalId],
+      )
     : null;
-  if (materiaId && !nomeMateria) throw new Error('matéria não encontrada');
+  if (materiaId && !materia) throw new Error('matéria não encontrada');
+  const nomeMateria = materia?.nome ?? null;
+  const materiaPortalId = materia?.portalId ?? portalId;
+
+  // Venda NOSSA de curso de parceiro: o professor recebe comissão pela
+  // regra do §5.6.1 — gravada no ato, como o percentual do split.
+  let comissaoProfessorPp: number | null = null;
+  if (materia && materiaPortalId !== portalId) {
+    if (materia.portalStatus !== 'ATIVO') throw new Error('este curso não está à venda no momento');
+    if (materia.comissao === null) throw new Error('o portal deste curso está sem contrato vigente');
+    comissaoProfessorPp = Number(materia.comissao);
+  }
+
+  // §5.10.2, etapa 2 — a trava: venda de portal só com a subconta do
+  // professor APROVADA e a Conta Escrow ligada. Sem isso, a parte dele
+  // cairia no nosso caixa e viraríamos devedores no dia seguinte. O
+  // percentual retido sai do CONTRATO vigente e fica GRAVADO no pedido —
+  // auditar uma venda antiga não pode depender do contrato de hoje.
+  let split: { walletId: string; percentualRetido: number } | undefined;
+  let percentualAplicado: number | null = null;
+  let indicacaoId: number | null = null;
+  if (portalId !== 0) {
+    const venda = await queryOne<{
+      status: string; situacao: string; escrowEm: Date | null; walletId: string | null;
+      percentualBase: string | null; acrescimoPp: string | null;
+    }>(
+      `SELECT p.status, p.subconta_situacao AS situacao, p.escrow_habilitada_em AS "escrowEm",
+              p.gateway_wallet_id AS "walletId", c.percentual_base AS "percentualBase",
+              c.acrescimo_indicacao_pp AS "acrescimoPp"
+         FROM portal p
+         LEFT JOIN portal_contrato c
+                ON c.portal_id = p.id AND c.vigente_ate IS NULL AND c.aceito_em IS NOT NULL
+        WHERE p.id = $1`,
+      [portalId],
+    );
+    if (!venda || venda.situacao !== 'APROVADA' || !venda.escrowEm || !venda.walletId) {
+      throw new Error(MOTIVO_SEM_SUBCONTA);
+    }
+    // §5.10, inadimplência: portal suspenso não abre venda nova. Quem já
+    // pagou continua assistindo; quem quer comprar espera o portal voltar.
+    if (venda.status !== 'ATIVO') {
+      throw new Error('Este portal está temporariamente sem vendas. Tente mais tarde.');
+    }
+    if (venda.percentualBase === null) {
+      throw new Error('este portal está sem contrato vigente — fale com o suporte');
+    }
+    percentualAplicado = Number(venda.percentualBase);
+    // §5.10.1: aluno que chegou pelo nosso anúncio paga base + acréscimo —
+    // só na primeira compra. A indicação é RESERVADA aqui (o pedido aponta
+    // para ela) e CONSUMIDA no pagamento: Pix abandonado não a gasta.
+    indicacaoId = await indicacaoViva(query, usuarioId, portalId);
+    if (indicacaoId) percentualAplicado += Number(venda.acrescimoPp ?? 0);
+    split = { walletId: venda.walletId, percentualRetido: percentualAplicado };
+  }
 
   const referencia = novaReferencia();
   const provedor = provedorAtual();
   const cobranca = await provedor.criarCobranca({
     referencia, centavos: preco.centavos, meio, emailPagador: email,
     descricao: nomeMateria ? `Licença — ${nomeMateria}` : 'Passe completo',
+    split,
   });
 
   return emTransacao(async (exec) => {
     const [p] = await exec<{ id: number }>(
-      `INSERT INTO pedido (referencia, usuario_id, escopo, materia_id, periodo,
-                           centavos, meio, expira_em)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-      [referencia, usuarioId, produto, materiaId, periodo, preco.centavos, meio, cobranca.expiraEm],
+      `INSERT INTO pedido (referencia, usuario_id, portal_id, escopo, materia_id, periodo,
+                           centavos, meio, expira_em, percentual_aplicado, indicacao_id,
+                           materia_portal_id, comissao_professor_pp)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+      [referencia, usuarioId, portalId, produto, materiaId, periodo, preco.centavos, meio,
+       cobranca.expiraEm, percentualAplicado, indicacaoId, materiaPortalId, comissaoProfessorPp],
     );
     await exec(
       `INSERT INTO pagamento (pedido_id, meio, centavos, detalhe)
        VALUES ($1, $2, $3, $4)`,
       [p.id, meio, preco.centavos,
-       JSON.stringify({ idExterno: cobranca.idExterno, provedor: provedor.nome })],
+       JSON.stringify({ idExterno: cobranca.idExterno, provedor: provedor.nome,
+                        ...(split ? { split } : {}) })],
     );
     await auditar(exec, email, 'pedido.aberto', 'pedido', p.id,
       { referencia, produto, periodo, materiaId, meio, centavos: preco.centavos });
@@ -129,12 +214,16 @@ export async function confirmarPagamento(
       return { ok: true as const, licencaId: anterior[0]?.licencaId ?? null, jaProcessado: true as const };
     }
 
+    // O portal sai do PEDIDO, não da requisição: quem chama aqui é o
+    // webhook do gateway, que não tem Host nem sessão (§5.10).
     const [pedido] = await exec<{
-      id: number; usuarioId: number; escopo: 'CATALOGO' | 'MATERIA';
+      id: number; usuarioId: number; portalId: number; escopo: 'CATALOGO' | 'MATERIA';
       materiaId: number | null; periodo: Periodo; centavos: number; meio: MeioPagamento;
+      indicacaoId: number | null; materiaPortalId: number;
     }>(
-      `SELECT id, usuario_id AS "usuarioId", escopo, materia_id AS "materiaId",
-              periodo, centavos, meio
+      `SELECT id, usuario_id AS "usuarioId", portal_id AS "portalId", escopo,
+              materia_id AS "materiaId", periodo, centavos, meio,
+              indicacao_id AS "indicacaoId", materia_portal_id AS "materiaPortalId"
          FROM pedido WHERE referencia = $1 AND status = 'ABERTO'
          FOR UPDATE`,
       [evento.referencia],
@@ -156,23 +245,24 @@ export async function confirmarPagamento(
     let assinaturaId: number | null = null;
     if (pedido.meio !== 'PIX') {
       const [a] = await exec<{ id: number }>(
-        `INSERT INTO assinatura (usuario_id, escopo, materia_id, periodo, meio, proxima_cobranca)
-         VALUES ($1, $2, $3, $4, $5, (current_date + ($6 || ' months')::interval)::date)
+        `INSERT INTO assinatura (usuario_id, portal_id, escopo, materia_id, periodo, meio,
+                                 proxima_cobranca, materia_portal_id)
+         VALUES ($1, $2, $3, $4, $5, $6, (current_date + ($7 || ' months')::interval)::date, $8)
          RETURNING id`,
-        [pedido.usuarioId, pedido.escopo, pedido.materiaId, pedido.periodo, pedido.meio,
-         String(MESES_DO_PERIODO[pedido.periodo])],
+        [pedido.usuarioId, pedido.portalId, pedido.escopo, pedido.materiaId, pedido.periodo,
+         pedido.meio, String(MESES_DO_PERIODO[pedido.periodo]), pedido.materiaPortalId],
       );
       assinaturaId = a.id;
     }
 
     const [licenca] = await exec<{ id: number }>(
-      `INSERT INTO licenca (usuario_id, escopo, materia_id, origem, status,
-                            inicio_em, fim_em, assinatura_id, pedido_id)
-       VALUES ($1, $2, $3, 'COMPRA', 'ATIVA', now(),
-               now() + ($4 || ' months')::interval, $5, $6)
+      `INSERT INTO licenca (usuario_id, portal_id, escopo, materia_id, origem, status,
+                            inicio_em, fim_em, assinatura_id, pedido_id, materia_portal_id)
+       VALUES ($1, $2, $3, $4, 'COMPRA', 'ATIVA', now(),
+               now() + ($5 || ' months')::interval, $6, $7, $8)
        RETURNING id`,
-      [pedido.usuarioId, pedido.escopo, pedido.materiaId,
-       String(MESES_DO_PERIODO[pedido.periodo]), assinaturaId, pedido.id],
+      [pedido.usuarioId, pedido.portalId, pedido.escopo, pedido.materiaId,
+       String(MESES_DO_PERIODO[pedido.periodo]), assinaturaId, pedido.id, pedido.materiaPortalId],
     );
 
     await exec(
@@ -181,6 +271,8 @@ export async function confirmarPagamento(
       [pedido.id, assinaturaId],
     );
     await exec(`UPDATE pagamento SET confirmado_em = now() WHERE pedido_id = $1`, [pedido.id]);
+    // §5.10.1: a indicação se gasta AQUI, no pagamento — uma vez só.
+    if (pedido.indicacaoId) await consumirIndicacao(exec, pedido.indicacaoId, pedido.id);
     await exec(`UPDATE evento_gateway SET processado_em = now(), resultado = $2 WHERE id = $1`,
       [registrado.id, `licença ${licenca.id} emitida`]);
     await auditar(exec, `gateway:${provedorNome}`, 'pagamento.confirmado', 'pedido', pedido.id,
@@ -200,17 +292,26 @@ export async function ativarTrial(usuarioId: number, email: string, materiaId: n
     );
     if (existente) throw new Error('Você já usou seu teste gratuito. Ele é um por conta.');
 
+    // O portal vem do aluno — não há requisição a consultar quando isto
+    // roda de um script, e derivar da linha elimina a chance de divergir.
+    const [dono] = await exec<{ portalId: number }>(
+      `SELECT portal_id AS "portalId" FROM usuario WHERE id = $1`, [usuarioId],
+    );
+    if (!dono) throw new Error('Conta não encontrada.');
+
     const [m] = await exec<{ id: number }>(
-      `SELECT id FROM materia WHERE id = $1 AND status = 'publicado'`, [materiaId],
+      `SELECT id FROM materia
+        WHERE id = $1 AND portal_id = $2 AND status = 'publicado'`,
+      [materiaId, dono.portalId],
     );
     if (!m) throw new Error('Escolha uma matéria publicada.');
 
     const [l] = await exec<{ id: number }>(
-      `INSERT INTO licenca (usuario_id, escopo, materia_id, origem, status,
-                            inicio_em, fim_em, cota)
-       VALUES ($1, 'MATERIA', $2, 'TRIAL', 'ATIVA', now(), now() + interval '7 days', $3)
+      `INSERT INTO licenca (usuario_id, portal_id, escopo, materia_id, origem, status,
+                            inicio_em, fim_em, cota, materia_portal_id)
+       VALUES ($1, $2, 'MATERIA', $3, 'TRIAL', 'ATIVA', now(), now() + interval '7 days', $4, $2)
        RETURNING id`,
-      [usuarioId, materiaId, JSON.stringify({ aulas: 4, exercicios: 30 })],
+      [usuarioId, dono.portalId, materiaId, JSON.stringify({ aulas: 4, exercicios: 30 })],
     );
     await auditar(exec, email, 'trial.ativado', 'licenca', l.id, { materiaId });
     return l.id;

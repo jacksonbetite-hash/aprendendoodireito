@@ -15,7 +15,7 @@ export const pool =
   new Pool({
     connectionString:
       process.env.DATABASE_URL ??
-      'postgres://aprendendo:aprendendo@localhost:5432/aprendendoodireito',
+      'postgres://aprimore:aprimore@localhost:5432/aprimoreosaber',
     max: 10,
   });
 

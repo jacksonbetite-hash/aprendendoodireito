@@ -57,33 +57,35 @@ export default function SeletorPeriodo({
         {/* ---------- Teste gratuito ---------- */}
         <div className="cartao cartao-plano plano">
           <div className="nome">Teste grátis</div>
-          <p className="resumo">Para conhecer antes de decidir.</p>
+          <div className="promessa">Conheça antes de decidir</div>
+          <p className="resumo">Para quem quer sentir o método antes de colocar dinheiro.</p>
           <div className="valor">R$ 0</div>
           <p className="periodo">7 dias · sem cartão de crédito</p>
+          <p className="inclui">O teste inclui:</p>
           <ul>
-            <li><Icone nome="check_circle" /> 1 matéria à sua escolha</li>
-            <li><Icone nome="check_circle" /> Cerca de 20% das aulas</li>
-            <li><Icone nome="check_circle" /> Até 30 exercícios</li>
-            <li className="ausente"><Icone nome="remove" /> Material para download</li>
-            <li className="ausente"><Icone nome="remove" /> Certificado de curso livre</li>
+            <li><Icone nome="check_circle" tamanho={20} /> 1 curso à sua escolha</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Cerca de 20% das aulas</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Até 30 exercícios</li>
+            <li className="ausente"><Icone nome="remove" tamanho={20} /> Material para download</li>
+            <li className="ausente"><Icone nome="remove" tamanho={20} /> Certificado de curso livre</li>
           </ul>
 
           {!logado ? (
-            <Link className="btn btn-contorno" href="/cadastrar">Criar conta e testar</Link>
+            <Link className="btn btn-primario btn-bloco" href="/cadastrar">Criar conta e testar</Link>
           ) : temTrial ? (
             <p className="caption suave">
-              Você já usou seu teste gratuito — ele é um por conta. Escolha uma matéria ao lado.
+              Você já usou seu teste gratuito — ele é um por conta. Escolha um curso ao lado.
             </p>
           ) : semMaterias ? (
-            <p className="caption suave">Nenhuma matéria publicada ainda.</p>
+            <p className="caption suave">Nenhum curso publicado ainda.</p>
           ) : (
             <form action={enviarTrial} className="pilha-sm">
-              <label className="caption suave" htmlFor="trial-materia">Matéria do teste</label>
+              <label className="caption suave" htmlFor="trial-materia">Curso do teste</label>
               <select id="trial-materia" name="materiaId" defaultValue={materias[0]?.id}
                       style={{ padding: '10px 12px', borderRadius: 'var(--r)', border: '2px solid var(--borda-controle)', background: 'var(--surface-container-lowest)', color: 'var(--on-surface)', fontFamily: 'inherit' }}>
                 {materias.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
               </select>
-              <button className="btn btn-contorno" type="submit" disabled={ativandoTrial}>
+              <button className="btn btn-primario btn-bloco" type="submit" disabled={ativandoTrial}>
                 {ativandoTrial ? 'Ativando…' : 'Ativar meus 7 dias'}
               </button>
             </form>
@@ -93,30 +95,32 @@ export default function SeletorPeriodo({
         {/* ---------- Matéria avulsa ---------- */}
         <div className="cartao cartao-plano plano destaque">
           <span className="fita">Mais escolhido</span>
-          <div className="nome">Matéria avulsa</div>
-          <p className="resumo">Uma matéria completa, do início ao fim.</p>
+          <div className="nome">Curso avulso</div>
+          <div className="promessa">Um curso inteiro, do começo ao fim</div>
+          <p className="resumo">Ideal para quem tem um objetivo específico e quer fechar ele agora.</p>
           <div className="valor">{brl(materia)}</div>
           <p className="periodo">{legenda(materia)}</p>
+          <p className="inclui">Tudo do teste, mais:</p>
           <ul>
-            <li><Icone nome="check_circle" /> Todas as aulas da matéria</li>
-            <li><Icone nome="check_circle" /> Todos os exercícios e simulados dela</li>
-            <li><Icone nome="check_circle" /> Material de apoio para download</li>
-            <li><Icone nome="check_circle" /> Vade-mécum dentro da aula</li>
-            <li><Icone nome="check_circle" /> Caderno de erros e anotações</li>
-            <li><Icone nome="check_circle" /> Sem anúncios</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Todas as aulas do curso</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Todos os exercícios e simulados dele</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Material de apoio para download</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Biblioteca de fontes dentro da aula</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Caderno de erros e anotações</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Sem anúncios</li>
           </ul>
           <form action={enviarCompra} className="pilha-sm">
             <input type="hidden" name="produto" value="MATERIA" />
             <input type="hidden" name="periodo" value={periodo} />
             <input type="hidden" name="meio" value={meio} />
             <select name="materiaId" value={materiaId} onChange={(e) => setMateriaId(e.target.value)}
-                    aria-label="Escolha a matéria"
+                    aria-label="Escolha o curso"
                     style={{ padding: '10px 12px', borderRadius: 'var(--r)', border: '2px solid var(--borda-controle)', background: 'var(--surface-container-lowest)', color: 'var(--on-surface)', fontFamily: 'inherit' }}>
               {materias.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
             </select>
             <MeioDePagamento meio={meio} aoTrocar={setMeio} />
-            <button className="btn btn-primario" type="submit" disabled={comprando || semMaterias}>
-              {comprando ? 'Abrindo pedido…' : 'Assinar esta matéria'}
+            <button className="btn btn-primario btn-bloco" type="submit" disabled={comprando || semMaterias}>
+              {comprando ? 'Abrindo pedido…' : 'Assinar este curso'}
             </button>
           </form>
         </div>
@@ -124,22 +128,24 @@ export default function SeletorPeriodo({
         {/* ---------- Passe completo ---------- */}
         <div className="cartao cartao-plano plano">
           <div className="nome">Passe completo</div>
-          <p className="resumo">Todas as matérias publicadas — e as lançadas na sua vigência.</p>
+          <div className="promessa">A plataforma inteira liberada</div>
+          <p className="resumo">Para quem estuda mais de uma área e não quer escolher.</p>
           <div className="valor">{brl(passe)}</div>
           <p className="periodo">{legenda(passe)}</p>
+          <p className="inclui">Tudo do curso avulso, mais:</p>
           <ul>
-            <li><Icone nome="check_circle" /> Tudo das matérias avulsas</li>
-            <li><Icone nome="check_circle" /> Matérias novas liberadas automaticamente</li>
-            <li><Icone nome="check_circle" /> Simulados cronometrados</li>
-            <li><Icone nome="check_circle" /> Estatística de acerto por assunto</li>
-            <li><Icone nome="check_circle" /> Sem anúncios</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Todos os cursos publicados</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Cursos novos liberados automaticamente</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Simulados cronometrados</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Estatística de acerto por assunto</li>
+            <li><Icone nome="check_circle" tamanho={20} /> Sem anúncios</li>
           </ul>
           <form action={enviarCompra} className="pilha-sm">
             <input type="hidden" name="produto" value="CATALOGO" />
             <input type="hidden" name="periodo" value={periodo} />
             <input type="hidden" name="meio" value={meio} />
             <MeioDePagamento meio={meio} aoTrocar={setMeio} />
-            <button className="btn btn-contorno" type="submit" disabled={comprando}>
+            <button className="btn btn-primario btn-bloco" type="submit" disabled={comprando}>
               {comprando ? 'Abrindo pedido…' : 'Assinar o passe'}
             </button>
           </form>

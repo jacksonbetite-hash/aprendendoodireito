@@ -63,7 +63,7 @@ export default async function Alunos(
             )}
           </tbody>
         </table>
-        <p style={{ fontSize: '.82rem', color: 'var(--ink-soft)', marginTop: '.8rem' }}>
+        <p style={{ fontSize: '.82rem', color: 'var(--on-surface-variant)', marginTop: '.8rem' }}>
           Contas sem login há 12 meses são bloqueadas de forma reversível (§6.5). A coluna de
           último acesso marca em âmbar quem passou de 300 dias — a régua de avisos começa aos 10 meses.
         </p>

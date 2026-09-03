@@ -25,6 +25,11 @@ export async function acaoAlterarPreco(_e: EstadoAdmin, dados: FormData): Promis
   const periodo = String(dados.get('periodo') ?? '') as Periodo;
   const valor = String(dados.get('valor') ?? '').replace(/\./g, '').replace(',', '.');
   const vigenteDe = String(dados.get('vigenteDe') ?? '');
+  // §5.10: cada portal tem a própria tabela. O identificador vem do
+  // formulário, mas `alterarPreco` refaz o `WHERE portal_id` em toda
+  // consulta — um valor forjado não alcança a tabela de outro portal.
+  const portalBruto = Number(dados.get('portalId'));
+  const portalId = Number.isInteger(portalBruto) && portalBruto >= 0 ? portalBruto : 0;
 
   const reais = Number(valor);
   if (!Number.isFinite(reais) || reais < 0) return { erro: 'Valor inválido.' };
@@ -33,12 +38,16 @@ export async function acaoAlterarPreco(_e: EstadoAdmin, dados: FormData): Promis
   if (!['mensal', 'trimestral', 'semestral', 'anual'].includes(periodo)) return { erro: 'Período inválido.' };
 
   try {
-    await alterarPreco(u.email, produto, periodo, Math.round(reais * 100), vigenteDe);
+    await alterarPreco(u.email, produto, periodo, Math.round(reais * 100), vigenteDe, portalId);
   } catch (err) {
     return { erro: 'Não foi possível alterar: ' + (err as Error).message };
   }
   revalidatePath('/admin/precos');
-  revalidatePath('/planos');
+  revalidatePath(`/admin/portais/${portalId}`);
+  if (portalId === 0) {
+    revalidatePath('/planos');
+    revalidatePath('/catalogo');
+  }
   return { ok: `Novo preço vale a partir de ${vigenteDe.split('-').reverse().join('/')}.` };
 }
 

@@ -1,0 +1,17 @@
+{
+  "_leia": "Locução do vídeo do hero. Uma fala por cena, colocada em 'inicio' (segundos do filme). Ver LEIA-ME.md nesta pasta.",
+  "voz": { "servico": "HeyGen", "nome": "Ana Carvalho - Friendly", "id": "6c0a95599317428a8151293305deceba", "locale": "pt-BR", "velocidade": 0.95 },
+  "falas": [
+    { "arquivo": "01.mp3", "cena": "abertura",  "inicio": 0.50,  "texto": "Aprimore o seu saber, no ritmo de quem trabalha." },
+    { "arquivo": "02.mp3", "cena": "aula",      "inicio": 4.90,  "texto": "A aula é curta. Nenhuma passa de quinze minutos." },
+    { "arquivo": "03.mp3", "cena": "exercicio", "inicio": 9.42,  "texto": "O exercício vem em seguida, comentado um a um." },
+    { "arquivo": "04.mp3", "cena": "fonte",     "inicio": 13.48, "texto": "E a fonte original está a um clique." },
+    { "arquivo": "05.mp3", "cena": "progresso", "inicio": 16.96, "texto": "Acompanhe o seu progresso. Sete dias grátis." }
+  ],
+  "trilha": {
+    "arquivo": "../trilha/fundo.mp3",
+    "origem": "HeyGen, catálogo Astral Generated Music, id 17babe5317f24345b808eaf6f2b53e02",
+    "descricao": "uplifting inspiring acoustic corporate, light piano and soft strings",
+    "nivel": "-30 LUFS, abaixada sob a voz por sidechain no gerador"
+  }
+}

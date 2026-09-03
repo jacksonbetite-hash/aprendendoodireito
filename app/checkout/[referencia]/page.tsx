@@ -23,7 +23,7 @@ export default async function Checkout({ params }: { params: Promise<{ referenci
   const provedor = provedorAtual();
   const pago = pedido.status === 'PAGO';
   const copiaECola = pedido.meio === 'PIX'
-    ? `00020126580014BR.GOV.BCB.PIX0136${detalhe.idExterno ?? referencia}5204000053039865802BR5921APRENDENDO O DIREITO6009SAO PAULO62070503***6304`
+    ? `00020126580014BR.GOV.BCB.PIX0136${detalhe.idExterno ?? referencia}5204000053039865802BR5916APRIMORE O SABER6009SAO PAULO62070503***6304`
     : null;
 
   return (
@@ -32,9 +32,6 @@ export default async function Checkout({ params }: { params: Promise<{ referenci
         <div className="cartao cartao-auth" style={{ width: 'min(560px, 92vw)' }}>
           {pago ? (
             <>
-              <span className="selo selo-secundaria" style={{ marginBottom: 16 }}>
-                <Icone nome="check_circle" />
-              </span>
               <h1>Pagamento confirmado</h1>
               <p className="sub">
                 Sua licença já está ativa. Bons estudos —

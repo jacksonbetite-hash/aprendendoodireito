@@ -1,4 +1,4 @@
-# Aprendendo o Direito — Documento de Discovery
+# Aprimore o Saber — Documento de Discovery
 
 **Versão:** 1.0 · **Data:** 29/08/2026 · **Estágio:** ideia / do zero
 **Construção:** sistema próprio · **Autoria:** multi-professor (responsável + convidados)
@@ -7,7 +7,7 @@
 
 ## 1. Sumário executivo
 
-O **Aprendendo o Direito** é uma plataforma de ensino jurídico com duas camadas: um site aberto que atrai por conteúdo (dicas, explicações e vade-mécum de consulta livre) e uma área paga com aulas em vídeo, materiais e exercícios, segmentada por área e assunto do Direito.
+O **Aprimore o Saber** é uma plataforma de ensino jurídico com duas camadas: um site aberto que atrai por conteúdo (dicas, explicações e vade-mécum de consulta livre) e uma área paga com aulas em vídeo, materiais e exercícios, segmentada por área e assunto do Direito.
 
 O que sustenta o produto:
 
@@ -18,7 +18,7 @@ O que sustenta o produto:
 
 **Recomendação central de escopo:** o gargalo deste negócio não é software, é produção de conteúdo. O aluno escolhe livremente a matéria que deseja entre as publicadas. O catálogo tem **mapa definitivo de 7 áreas** e **catálogo de partida definido: 11 matérias** (§4), todas ainda a produzir, com **lançamento em ondas** — abre com as primeiras 3 a 5 prontas e libera as demais em ondas quinzenais/mensais. Quem preferir orientação em vez de escolha ganha, na Fase 2, um **plano de ensino sugerido**: um questionário rápido de perfil e nivelamento constrói a sugestão de estudo (§5.8).
 
-**Decisões já validadas com o responsável:** licença vendida no nível Matéria (não por assunto) · trial de 7 dias sem cartão, limitado a ~20% do conteúdo · **a plataforma atenderá também menores de idade**, o que torna os requisitos do ECA Digital parte do escopo do sistema (§12.2) · **licença promocional** por matéria e período, gratuita ou com desconto, concedida por código, pelo admin ou por evento (§6.1.1) · **conta sem login por mais de 1 ano é bloqueada**, de forma reversível, com avisos prévios (§6.5) · **escolha livre de matéria pelo aluno**, com lançamento de 3 a 5 matérias e catálogo crescente · **plano de ensino sugerido por diagnóstico** de perfil e nivelamento, na Fase 2 (§5.8) · **site e sistema adaptados a mobile** — aluno mobile-first, admin e professor responsivos (§9) · **bloqueio de download dos vídeos com marca d'água dinâmica** — proteção em camadas (§10) · **mural de vagas e estágios** gratuito e em autosserviço, com aprovação prévia, gestão pelo anunciante e vigência máxima de 3 meses (§5.7.1).
+**Decisões já validadas com o responsável:** licença vendida no nível Matéria (não por assunto) · trial de 7 dias sem cartão, limitado a ~20% do conteúdo · **a plataforma atenderá também menores de idade**, o que torna os requisitos do ECA Digital parte do escopo do sistema (§12.2) · **licença promocional** por matéria e período, gratuita ou com desconto, concedida por código, pelo admin ou por evento (§6.1.1) · **conta sem login por mais de 1 ano é bloqueada**, de forma reversível, com avisos prévios (§6.5) · **escolha livre de matéria pelo aluno**, com lançamento de 3 a 5 matérias e catálogo crescente · **plano de ensino sugerido por diagnóstico** de perfil e nivelamento, na Fase 2 (§5.8) · **site e sistema adaptados a mobile** — aluno mobile-first, admin e professor responsivos (§9) · **bloqueio de download dos vídeos com marca d'água dinâmica** — proteção em camadas (§10) · **mural de vagas e estágios** gratuito e em autosserviço, com aprovação prévia, gestão pelo anunciante e vigência máxima de 3 meses (§5.7.1) · **portal do professor (white-label)**: nova modalidade em que o professor opera site, acervo, base de alunos e faturamento próprios sobre a nossa infraestrutura, pagando licença mensal fixa mais percentual sobre as vendas (§5.10).
 
 ---
 
@@ -299,6 +299,248 @@ Reforço do responsável: a área administrativa concentra **controle de valores
 
 ---
 
+### 5.10 Portal do Professor — modelo white-label (novo serviço)
+
+Segunda modalidade comercial, ao lado do professor convidado do §5.6. Ali o professor entrega conteúdo e recebe comissão; **aqui ele opera o próprio negócio dentro da nossa infraestrutura** — site com endereço próprio, acervo próprio, base de alunos própria e faturamento próprio. Nós fornecemos a plataforma e cobramos por isso.
+
+O nome interno é **portal do professor**; cada portal é um *tenant* — uma fatia isolada do sistema, identificada pelo endereço de acesso.
+
+**A promessa ao cliente:** "seu site de aulas no ar em um dia, sem contratar desenvolvedor, sem cuidar de servidor, sem montar checkout — você grava, publica e recebe."
+
+#### Decisões tomadas
+
+| Tema | Decisão |
+|---|---|
+| **Endereço (a "máscara")** | Subdomínio do nosso domínio, nome escolhido pelo cliente: `jackson.aprimoreosaber.com.br`. Certificado curinga único, DNS sob nosso controle. **Domínio próprio do professor** (`site.dominiodele.com.br`, via CNAME) fica como **upgrade pago da Fase 2** — a resolução de tenant já será por cabeçalho `Host`, então não há retrabalho |
+| **Fluxo do dinheiro** | **Split automático no gateway**, com subconta do professor. Ele recebe a parte dele na liquidação; nós retemos o percentual |
+| **Cobrança do professor** | **Licença mensal fixa + percentual fixo sobre as vendas.** Duas linhas na mesma fatura mensal |
+| **Acréscimo por indicação** | Aluno que chega ao portal por anúncio nosso: **+5 pontos percentuais** sobre aquela venda, **só na primeira compra** dele naquele portal (§5.10.1) |
+| **Acervo** | **Escolha do professor, matéria a matéria**: fica só no portal dele, ou aparece também na nossa vitrine |
+| **Base de alunos** | **Separada por portal.** O aluno do professor não existe no nosso catálogo, e vice-versa |
+| **Publicação de conteúdo** | **Direta, com moderação reativa.** Autonomia é a promessa do produto; não há revisor no caminho |
+| **Vídeo** | Cota de armazenamento e banda por plano, **excedente cobrado** |
+| **Quando** | **Em paralelo à Fase 1** — há professor interessado. Ver a ressalva de capacidade no §16 |
+| **Entrada do professor** | **Autosserviço completo** (03/09/2026): ele se cadastra, escolhe o plano, paga a primeira mensalidade e o portal nasce sozinho. Sem fila de aprovação — coerente com a publicação direta já decidida |
+| **Divulgação pública** | Página `/para-professores` e seção em `/planos`, com **valor fechado** do plano ativo, lido de `portal_plano` |
+
+#### Anatomia do portal (estrutura única, sem editor livre)
+
+Uma página só, em seções fixas, com conteúdo preenchido pelo professor:
+
+1. **Abertura** — título, chamada, foto ou vídeo de apresentação, e o espaço para descrever o propósito do trabalho
+2. **Acervo** — vídeos organizados por **área → assunto**, com cadeado no que exige licença
+3. **Oferta** — o que ele vende e por quanto
+4. **Prova e contato** — sobre o professor, depoimentos, contato
+5. **Rodapé legal** — termos, privacidade, reembolso, identificação do responsável
+
+O professor controla texto, imagens, cores dentro de uma paleta permitida e a ordem do acervo. **Não** controla HTML, CSS nem estrutura — é o que mantém o provisionamento automático e o suporte viável.
+
+#### A regra que sustenta o modelo: origem da venda
+
+Como o mesmo conteúdo pode ser vendido em dois lugares, **a origem da venda decide tudo** — base do aluno, licença e dinheiro:
+
+| Onde a venda aconteceu | Aluno vai para | Dinheiro |
+|---|---|---|
+| **Portal do professor**, tráfego dele | Base do portal | Split no gateway: professor recebe direto, nós retemos o **percentual base** |
+| **Portal do professor**, aluno trazido por anúncio nosso | Base do portal | Split com **percentual base + 5 pontos percentuais** (§5.10.1) |
+| **Nossa vitrine** (matéria que ele optou por compartilhar) | **Nossa base** | Venda nossa; o professor recebe **comissão** pela regra do §5.6.1 |
+
+Em termos de modelo de dados, isso é uma coluna: `pedido.portal_id` — o portal quando a venda nasce lá, **`0` quando nasce na nossa vitrine**. Essa coluna é o eixo do módulo inteiro.
+
+**Por que `0` e não `NULL`** (decidido ao escrever `db/018_portal.sql`): a plataforma é o portal 0, uma linha reservada, e a coluna é `NOT NULL` em toda parte. Com `NULL`, cada consulta precisaria de `IS NOT DISTINCT FROM` e um esquecimento viraria vazamento silencioso — que é o risco 14, classificado como crítico. Com sentinela, `WHERE portal_id = $1` está sempre certo e, se o parâmetro vier nulo por bug, a consulta devolve zero linhas: falha fechada, que é como uma falha de isolamento precisa falhar.
+
+#### 5.10.1 Acréscimo por indicação: +5 pontos percentuais
+
+Quando o aluno chega ao portal **por anúncio ou vitrine no nosso catálogo** e compra lá, o percentual sobre aquela venda sobe em **5 pontos percentuais** — se o contrato prevê 10%, aquela venda paga 15%. Não é 5% relativo: são 5 pontos somados.
+
+**Incide uma única vez: na primeira compra daquele aluno naquele portal.** Renovações e compras seguintes voltam ao percentual base. A lógica é honesta dos dois lados — nós entregamos o aluno, e por isso cobramos a mais na conversão; a relação daí em diante é do professor, e por isso não cobramos para sempre.
+
+**Como a origem é provada** — este é o ponto que evita disputa (§15.12):
+
+1. Todo anúncio ou card de vitrine do portal aponta para um **link rastreado**, com identificador assinado por nós.
+2. O vínculo é gravado **no clique**, não no checkout: chegou pelo link, nasce um registro de indicação com o portal, o carimbo de tempo e o prazo de validade.
+3. O primeiro pedido pago daquele aluno naquele portal **consome** o vínculo — e o consumo fica registrado no pedido, com data do clique e origem. Consumido, não incide de novo.
+4. O professor **não tem como remover ou editar** o marcador, e o extrato dele mostra, venda a venda, quais tiveram o acréscimo e por quê. Transparência aqui é o que sustenta a cobrança.
+
+**Validade do clique — premissa a confirmar:** adotei **90 dias** entre o clique e a compra. Sem prazo, um clique de dois anos atrás cobraria a mais numa venda que o professor conquistou sozinho; com prazo curto demais, perdemos a conversão lenta, que é a regra em educação. O número fica como parâmetro do contrato do portal, ao lado de `dias_retencao`.
+
+**Boa notícia técnica:** como o split do Asaas é definido **por cobrança** (`percentualValue` na criação), o acréscimo é aplicado no ato — o pedido nasce já com 15% em vez de 10%. Não há apuração mensal nem cobrança posterior para isso.
+
+**No modelo de dados:** `indicacao` (portal, token, criada_em, expira_em, consumida_em, pedido_id) e, em `pedido`, o percentual efetivamente aplicado — guardar o número usado, e não recalculá-lo depois, é o que permite auditar uma venda de dois anos atrás sem depender do contrato vigente hoje.
+
+**Consequência assumida:** o sistema passa a ter duas bases de aluno e dois motores financeiros. É deliberado, e o preço disso é que toda consulta de catálogo, licença e pedido precisa ser escopada por portal.
+
+#### Ciclo financeiro do professor
+
+```
+VENDA no portal → gateway divide na liquidação
+                   ├─ parte do professor → subconta dele (retida por D+N)
+                   └─ nosso percentual   → nossa conta
+
+FECHAMENTO MENSAL → fatura ao professor:
+                   ├─ licença mensal do plano
+                   ├─ excedente de armazenamento/banda
+                   └─ ajustes: reembolsos e chargebacks do período
+```
+
+**Retenção como parâmetro, não como regra fixa.** O reembolso de 7 dias do CDC (§6.6, art. 49) e o chargeback chegam depois de o split já ter liberado o dinheiro. Por isso `dias_retencao` e `percentual_reserva` são **campos do contrato do portal**, não constantes de código.
+
+**Verificado na documentação dos gateways (setembro/2026):**
+
+- **Asaas.** O split é calculado sobre o `netValue` (valor já líquido de taxas) e aceita percentual, valor fixo ou os dois. No estorno, *"o split também será estornado — todas as contas que receberam o saldo da cobrança terão a transferência estornada"*. **O ponto crítico:** se a subconta já não tiver saldo, *"a conta principal é garantidora em caso de saldo negativo na subconta, causado por débito da antecipação, chargeback, estorno"*, e o titular da conta raiz assume **responsabilidade solidária** pelas obrigações das subcontas. Ou seja: sem retenção, o reembolso do aluno sai do nosso caixa.
+- **A trava existe e se chama Conta Escrow** (Asaas). Os valores transacionados pela subconta ficam retidos por prazo definido por nós, liberados só depois. O prazo é configurado **por subconta**, no campo `daysToExpire`, e a liberação acontece automaticamente ao fim do período, **manualmente via API**, ou ao desabilitar o recurso. Só entram no fluxo as cobranças recebidas **após a habilitação**, e o recurso **tem cobrança recorrente por subconta habilitada** — custo a embutir no preço do plano.
+- **Pagar.me** resolve por outro caminho: o split marca, por recebedor, quem é `liable` (responsável pelo chargeback), quem paga as taxas e quem fica com o resto do rateio — dá para tornar o professor o responsável pelo estorno. A retenção, porém, é indireta (`transfer_settings.transfer_enabled = false` suspende a transferência automática) e a documentação pública não descreve o caminho de liberação manual.
+
+**Decisão técnica derivada:** **Asaas com Conta Escrow**, porque `daysToExpire` mapeia um-para-um no nosso `dias_retencao` — o desenho parametrizado do contrato do portal vira configuração de subconta, sem código de conciliação próprio. `percentual_reserva` permanece como colchão adicional aplicado por nós na apuração, para o chargeback que chega depois do fim da escrow.
+
+**Duas consequências de cadastro, ambas com efeito imediato:**
+
+1. **Este modelo exige CNPJ.** A documentação do Asaas é explícita: *"Contas de pessoa física (CPF) não podem criar subcontas"*, por exigência regulatória do Banco Central. Isso encerra a decisão 2 do §16 — se o portal do professor existe, a operação precisa ser pessoa jurídica.
+2. **Período de avaliação regulatória.** Contas novas que criam subcontas por API começam limitadas: **60 dias, no máximo 10 subcontas e R$ 2.000 por subconta**, até a homologação. O piloto com um professor cabe folgadamente, mas **o teto de R$ 2.000 por subconta pode travar o primeiro mês de vendas dele** — pedir homologação antes de abrir o portal, não depois.
+
+#### Inadimplência do professor
+
+Regra decidida: **o portal sai do ar, mas o aluno com licença vigente continua assistindo até o fim da vigência.**
+
+```
+D+0  vencimento          → aviso
+D+5  segundo aviso       → banner no painel do professor
+D+10 SUSPENSÃO PARCIAL   → portal fora do ar para visitantes
+                           novas vendas bloqueadas
+                           painel do professor em modo leitura
+                           ►  ALUNO COM LICENÇA VIGENTE CONTINUA ACESSANDO
+D+60 encerramento        → conforme contrato; conteúdo preservado pelo prazo de saída
+```
+
+A exceção do aluno não é gentileza: o contrato dele é com quem lhe cobrou, e derrubar o acesso de quem pagou por dívida de terceiro é exposição direta a Procon e a ação individual.
+
+#### Responsabilidade, LGPD e conteúdo
+
+- **Publicação direta** significa conteúdo de terceiro hospedado no nosso domínio. Mitigação: contrato com declaração de titularidade e responsabilidade exclusiva do professor, canal de denúncia visível, remoção rápida após notificação, e identificação do responsável no rodapé de cada portal.
+- **Base separada torna o professor controlador** dos dados dos alunos dele; nós somos **operadores**. Isso exige, além do contrato comercial, um **contrato de tratamento de dados (DPA)** definindo finalidade, subcontratação, incidentes e devolução/eliminação ao fim.
+- **ECA Digital (§12.2) continua sendo nossa obrigação** — a infraestrutura, o vídeo e o checkout são nossos. As exigências relativas a menores valem no portal do professor exatamente como valem no site principal.
+- **Direito de recusa e desligamento** por conteúdo ilícito, plágio, prática enganosa ou dano à marca — cláusula expressa, com efeito imediato.
+
+#### Impacto no modelo de dados (§11)
+
+| Bloco | Mudança |
+|---|---|
+| **Novo** | `portal` (professor, máscara/subdomínio, plano, status, personalização) · `portal_plano` (licença mensal, percentual, cotas) · `portal_contrato` (percentual, acréscimo por indicação, validade do clique, `dias_retencao`, `percentual_reserva`, vigência) · `portal_consumo` (armazenamento e banda por mês) · `portal_fatura` · `indicacao` (§5.10.1) |
+| **Ganha escopo de portal** | `area`, `materia`, `assunto`, `aula`, `licenca`, `pedido`, `assinatura`, `usuario`, `preco` — todos passam a carregar `portal_id` `NOT NULL` (`0` = plataforma), com chave estrangeira composta `(pai_id, portal_id)` impedindo pendurar conteúdo de um portal em outro |
+| **Muda restrição** | `materia.slug` deixa de ser único global e passa a ser **único por portal** — hoje é `UNIQUE` em `db/001_schema.sql` e dois professores com "Direito Penal" colidiriam |
+| **Ganha campo** | `licenca` registra a origem (portal ou plataforma); o motor do §6.3 passa a resolver acesso **dentro do escopo do portal** — o passe CATALOGO da plataforma não alcança acervo de portal |
+
+#### Impacto na arquitetura (§10)
+
+- **Resolução de tenant por `Host`** no middleware, antes de qualquer consulta. Um erro aqui vaza conteúdo de um portal para outro — é o ponto que exige teste automatizado tão rigoroso quanto o motor de licença (§15.8).
+- **nginx passa a escutar :443** com certificado curinga — hoje o `nginx/aprimoreosaber.conf` só atende :80. A entrega de vídeo por `X-Accel-Redirect` não muda: a assinatura de `lib/video.ts` apenas ganha o portal dentro do escopo.
+- **Vídeo de portal deve nascer em CDN externa** (Bunny/Cloudflare, já suportados por `lib/video.ts`): o custo passa a ser variável e diretamente repassável, e o acervo de terceiros não consome disco e banda da nossa VPS.
+- **Medição por portal** (GB armazenados, GB trafegados) vira requisito de faturamento, não item de observabilidade.
+- **Reserva de máscara**: lista de nomes proibidos (rotas do sistema — `admin`, `api`, `www`, `blog`, `planos` —, marcas de terceiros e termos ofensivos), aprovação da máscara no cadastro, e política de liberação após encerramento.
+
+#### 5.10.2 Plano de construção (revisado em 03/09/2026)
+
+A retaguarda do portal já existe: cadastro de professor, criação do portal com máscara, edição, status, planos, contrato com aceite registrado por IP e tabela de preços do portal (`app/admin/portais/`, `lib/admin-portais.ts`). O que falta é o que transforma isso num **produto que se vende sozinho** — e é o que este plano cobre.
+
+**Duas decisões desta rodada mudam a ordem do trabalho:**
+
+1. **Autosserviço acopla a divulgação ao financeiro.** Se o professor se cadastra e paga sozinho, o portal precisa nascer de um pagamento confirmado, e a subconta com split precisa existir antes da primeira venda dele. Sem isso, a receita das vendas do professor cai na nossa conta e viramos devedores no dia seguinte. A página pública, portanto, **não pode ser entregue isolada**.
+2. **Compartilhar curso com a nossa vitrine exige mexer na trava de isolamento.** Verificado no banco: um aluno da plataforma comprando curso de portal é recusado por `licenca_materia_mesmo_portal`. É a mesma trava que impede vazamento entre portais (§15.14) — ela e a vitrine compartilhada não convivem sem uma regra explícita.
+
+##### A regra que destrava a vitrine compartilhada
+
+Hoje `portal_id` responde a duas perguntas ao mesmo tempo, e elas se separam:
+
+| Coluna | Significa | Vale para |
+|---|---|---|
+| `portal_id` | **De quem é o aluno** — qual base, qual login, qual site | licença, pedido, assinatura |
+| `materia_portal_id` (nova) | **De quem é o curso** — quem produziu e quem recebe por ele | licença, pedido, assinatura |
+
+- A chave estrangeira composta `(materia_id, materia_portal_id) → materia(id, portal_id)` continua garantindo que o curso existe naquele portal.
+- Um `CHECK` permite as duas divergirem **somente quando `portal_id = 0`**: a plataforma pode vender curso de professor; o portal de um professor **nunca** vende curso de outro.
+- A conferência de `na_vitrine_plataforma` fica na aplicação, não no banco, de propósito: o professor pode tirar o curso da vitrine amanhã, e isso **não pode invalidar** a licença de quem já comprou.
+
+##### Sequência
+
+| # | Etapa | Entrega | Por que nesta posição |
+|---|---|---|---|
+| **1** | **Cobrança e provisionamento do professor** — ✅ **entregue em 03/09/2026** | `lib/portal-assinatura.ts`: contratação em transação única (conta + portal RASCUNHO + contrato aceito com IP + 1ª fatura) · webhook idempotente ativa o portal ao confirmar (`PF-` roteado em `/api/webhook`) · CNPJ validado (inclusive o formato alfanumérico de 2026) · teto regulatório vira lista de espera · RASCUNHO não resolve publicamente. 9 testes de integração + 7 de CNPJ; provado por HTTP: portal nasce invisível, paga, ativa e o endereço passa a ser dele | É a espinha do autosserviço. Sem ela, a página pública promete o que o sistema não entrega |
+| **2** | **Subconta, split e trava de venda** — ✅ **entregue em 03/09/2026** | `db/024_subconta.sql` + `lib/portal-subconta.ts`: portal ativado abre a subconta automaticamente (EM_ANALISE) · aprovação/recusa chegam por webhook, idempotentes · a aprovação liga a Conta Escrow com o `dias_retencao` do contrato na mesma passada · `abrirPedido` recusa venda de portal sem subconta APROVADA + escrow, e grava `percentual_aplicado` do contrato no pedido, passando o split (carteira do professor + nosso percentual) ao provedor · em desenvolvimento, `scripts/aprovar-subconta.mjs` faz o papel do gateway. 6 testes de integração; provado por HTTP: contratou → pagou → ATIVO + EM_ANALISE → aprovada → escrow 30 dias | Impede o cenário em que o professor vende e o dinheiro cai na nossa conta |
+| **3** | **Divulgação e funil** — ✅ **entregue em 03/09/2026** | `/para-professores`: proposta, como funciona, preço lido do plano ativo (`portal_plano`, nunca número no código) e formulário de contratação que chama `assinarPortal` — quem contrata sai logado, direto para a tela de pagamento (`/para-professores/pagamento/[ref]`, que vira "seu portal está no ar" ao confirmar e informa a análise da subconta) · seção em `/planos`, chamada na home, link no rodapé e faixa no catálogo, todos **só no site principal** (dentro do portal de um professor, anunciar "monte o seu" seria concorrência na casa dele) · e2e de funil no navegador (`testes-e2e/portal-professor.mjs`, 16 checagens): do anúncio na home ao portal no ar, com CNPJ errado barrado e isolamento conferido | Só agora a promessa pública é verdadeira ponta a ponta |
+| **4** | **Alunos e financeiro do portal** — ✅ **entregue em 03/09/2026** | **Indicação (§5.10.1)**: `/ir/<mascara>` cria a indicação no clique com a validade do contrato e redireciona ao portal; o proxy guarda o token em cookie do portal; cadastro/login vinculam; `abrirPedido` aplica base + acréscimo e grava no pedido; o pagamento consome — uma vez só (`lib/portal-indicacao.ts`). **Consumo**: banda contada na rota de vídeo por faixa servida, armazenamento medido no disco (`lib/portal-financeiro.ts`). **Fatura**: fechamento por competência = licença + excedente (GB inteiro acima da cota, gravado no detalhe) + ajustes com motivo obrigatório, cobrada pelo mesmo webhook `PF-`. **Régua**: vencida → EM_ATRASO; vencida há 10 dias → portal SUSPENSO (visitante vê aviso; aluno com licença continua; compra barrada); pagamento reativa. **Admin**: `/admin/portais/[id]/alunos` (base do professor, aviso LGPD, cortesia) e `/financeiro` (consumo × cota, faturas, fechar competência, extrato venda a venda com ★ de indicação). `scripts/fechar-mes.mjs` é o cron do dia 1. Correções de passagem: cortesia gravava `portal_id` errado; o CHECK de consumo da indicação brigava com o `SET NULL` do pedido (`db/025`). 17 testes de unidade + 12 de integração + e2e | Depende de haver venda para relatar |
+| **5** | **Vitrine compartilhada** — ✅ **entregue em 03/09/2026** | `db/026`: `materia_portal_id` em licença, pedido e assinatura, com FK composta (o curso existe naquele portal) e `CHECK` (as duas colunas só divergem quando o comprador é da plataforma) — a trava do §15.14 continua declarativa, e o teste adversarial confirma: portal de professor não vende curso de outro nem pela aplicação, nem pelo banco · a página do curso e a da aula viraram componentes parametrizados por **de quem é o curso**; a vitrine mora em `/parceiros/<mascara>/materia|aula/<slug>` na plataforma, com crédito ao parceiro e compra pelo NOSSO preço e checkout · `comissao_professor_pp` gravada no pedido (§5.6.1), visível no financeiro do portal · o passe completo **não** abre curso de parceiro (`espectadorParaCurso`) · tirar da vitrine não invalida quem comprou · painel, retomar e caderno de erros linkam pelo caminho certo. 6 testes de integração + e2e no navegador | A mais cara, e a única que mexe numa trava de segurança já testada |
+
+##### Travas de conformidade que o autosserviço não pode ignorar
+
+- **CNPJ obrigatório** no cadastro do professor: sem ele não há subconta (regra do Banco Central, §8.2). A validação entra no formulário, não no suporte.
+- **Teto do período de avaliação regulatória**: 10 subcontas e R$ 2.000 por subconta até a homologação. O autosserviço precisa **parar de aceitar novos portais** ao chegar no limite, com aviso claro em vez de erro — e a fila de espera vale mais que um cadastro que quebra.
+- **LGPD na tela de alunos**: o professor é o controlador daqueles dados; o acesso do admin é para suporte e fica registrado em auditoria (§12.1).
+- **Testes de isolamento**: a exceção da vitrine compartilhada entra na mesma suíte que hoje recusa 18 tentativas de cruzamento entre portais. Exceção sem teste é a porta pela qual o §15.14 acontece.
+
+##### ~~Pendência que bloqueava a etapa 3~~ — resolvida em 03/09/2026
+
+O preço foi calculado (§5.10.3) e definido: **R$ 149/mês + 10%**, cotas de 100 GB + 300 GB/mês, excedente R$ 0,40/GB. Aplicado em `db/023_plano_lancamento.sql`. A etapa 3 está desbloqueada.
+
+#### 5.10.3 Levantamento de custo e preço (03/09/2026)
+
+**Custos unitários apurados** (dólar a R$ 5,15 em 02/09/2026):
+
+| Item | Custo |
+|---|---|
+| Armazenamento de vídeo (Bunny Stream, US$ 0,01/GB/mês) | R$ 0,052/GB/mês — transcodificação incluída |
+| Entrega de vídeo (Bunny, a partir de US$ 0,005/GB) | R$ 0,026/GB · **pior caso** (POP América do Sul) ~R$ 0,234/GB |
+| Conta Escrow por subconta | R$ 9,90/mês |
+| Conta Escrow da conta-pai (custo único da plataforma) | R$ 99,90/mês |
+| Asaas: Pix R$ 1,99 · cartão à vista R$ 0,49 + 2,99% | por transação |
+| Rateio de infra (VPS/banco/backup) + provisão de suporte | ~R$ 35/portal/mês |
+
+**Custo mensal por portal** (premissas: 1 h de aula armazenada ≈ 2 GB em HLS; 1 h assistida ≈ 0,7 GB):
+
+| Cenário | Acervo · alunos | Custo (banda barata) | Custo (pior caso) |
+|---|---|---|---|
+| Pequeno | 20 h · 30 alunos | R$ 64 | R$ 77 |
+| Médio | 50 h · 150 alunos | R$ 76 | R$ 163 |
+| Grande | 100 h · 500 alunos | R$ 107 | R$ 398 |
+
+O custo é baixo e quase todo fixo (escrow + infra + suporte ≈ R$ 45); o vídeo só pesa quando há aluno assistindo em volume — e aí o percentual acompanha. O único custo que não se dilui é a Conta Escrow da conta-pai: com um portal, pesa inteira; com dez, R$ 9,99 cada.
+
+**Mercado:** Hotmart 9,9% + R$ 1/venda sem mensalidade (player +R$ 2,49/venda) · Kiwify 8,99% + R$ 2,49 · plataformas white-label R$ 150–300/mês sem percentual. Nosso produto é as duas coisas — checkout **e** site próprio — e o preço escolhido deixa o atrito total do professor (10% nosso + ~3% de gateway) na altura da Hotmart, com a mensalidade abaixo das plataformas.
+
+**Margem no preço escolhido (R$ 149 + 10%):** portal médio rende R$ 468/mês contra custo de R$ 76–163; o portal pequeno — o cliente típico do lançamento — rende R$ 228 contra R$ 64–77, e sozinho cobre a escrow da conta-pai. A conta fecha até no pior caso de banda em todos os cenários.
+
+#### Estado da implementação (setembro/2026)
+
+**Pronto e verificado:**
+
+- `db/018_portal.sql` — tabelas do portal, escopo de tenant no catálogo e no comercial, isolamento por chaves compostas. 18 tentativas de cruzar portais foram recusadas pelo banco.
+- `proxy.ts` — resolução de tenant pelo cabeçalho `Host` (no Next 16 a antiga *middleware* chama-se **proxy**). O cabeçalho recebido da rua é apagado antes de qualquer coisa: sem isso, mandar `x-portal-mascara` numa requisição comum leria o acervo alheio.
+- `lib/portal.ts` (parte pura, 17 testes) e `lib/portal-consultas.ts` — leitura do endereço e tradução em portal.
+- Escopo aplicado em catálogo, sessão, licença, preço, checkout, vade-mécum, painel e administração. O `portalId` é argumento obrigatório nas consultas: esquecer o escopo vira erro de compilação, não vazamento.
+- Verificação: 106 testes de unidade, três suítes de ponta a ponta (autenticação, comercial, administração) e teste de isolamento por HTTP com dois hosts — o mesmo `slug` devolve conteúdos diferentes conforme o endereço, e a aula da plataforma responde 404 no host do portal.
+
+**Atualização de 03/09/2026 — as cinco etapas do §5.10.2 estão entregues** (autosserviço, subconta/split/escrow, divulgação e funil, alunos e financeiro, vitrine compartilhada), todas com testes de integração e de ponta a ponta no navegador. O provedor de pagamento continua o `simulado`: o adaptador Asaas real implementa a mesma interface (`Provedor`) quando houver credencial.
+
+**Entregue também em 03/09/2026, depois das cinco etapas:**
+
+- **A página única do portal** (§5.10, "Anatomia"): `app/PaginaPortal.tsx` — abertura com chamada, propósito e foto; acervo por área e assunto com cadeado; oferta com os preços do portal; quem ensina e contato; rodapé legal com o responsável identificado (nome e CNPJ) e a plataforma como operadora. No endereço do professor a marca é a dele, blog e mural de vagas saem do menu, e a cor principal escolhida entra no tema (só cor validada chega ao CSS).
+- **O painel do professor** (`/professor`): visão geral (portal, conta de recebimento, acervo, alunos, contrato, próximos passos), minha página, cursos e aulas (área → curso → assunto → aula → questão, publicar/despublicar, vitrine da plataforma), alunos (com o aviso de LGPD) e financeiro (sua parte, comissão de vitrine, consumo × cota, faturas com botão de pagar, extrato). Reaproveita os formulários e a biblioteca da retaguarda; a diferença que é o coração da segurança: **o portal vem da sessão, nunca do formulário**. E2E no navegador com 17 checagens.
+- Correção de raiz encontrada pelo e2e: `editarPortal` apagava nome, CNPJ e e-mail do responsável (e o domínio próprio) ao salvar qualquer outra coisa — afetava o admin também.
+
+**Ainda não feito:**
+
+- Apuração mensal e repasse da comissão de vitrine (§5.6.1): a comissão está gravada venda a venda e somada nos financeiros; o fechamento com NF e comprovante é o fluxo do §5.6.1, ainda por construir.
+- Upload de vídeo pelo professor: a aula aponta para um `video_id` do provedor; enviar o arquivo pelo painel (e medir o armazenamento no CDN) é o passo seguinte — hoje o arquivo entra pelo volume de mídia.
+- Foto de apresentação por upload (hoje é uma URL); domínio próprio (Fase 2).
+
+#### Fora do escopo deste modelo (por ora)
+
+Domínio próprio do professor · e-mail no domínio dele · editor livre de layout · app · múltiplos professores dentro de um mesmo portal · cupons e campanhas próprias do portal · certificado emitido pelo portal.
+
+#### Riscos específicos
+
+Consolidados nos itens 14 a 17 do §15.
+---
+
 ## 6. Regras de negócio — licenciamento
 
 Esta é a parte mais crítica do sistema. Erro aqui vira prejuízo ou cliente irritado.
@@ -426,6 +668,8 @@ Faixas indicativas de mercado (confirmar na negociação — variam por volume e
 | Stripe | variável | ~3,99% + R$ 0,39 | avançada | Connect |
 
 **Recomendação:** **Asaas** ou **Pagar.me**. O critério decisivo não é a taxa, é o **split de pagamento** — com professores convidados recebendo percentual, o repasse automático na liquidação evita virar rotina manual de transferência e reduz risco fiscal. Confirmar antes de fechar: (a) suporte a Pix Automático via API, (b) split com retenção, (c) qualidade dos webhooks e reenvio em falha.
+
+**Decidido em setembro/2026, pelo item (b): Asaas.** A verificação feita para o §5.10 mostrou que o Asaas é o único dos dois com retenção programável documentada — a **Conta Escrow**, com prazo por subconta (`daysToExpire`) e liberação automática, manual por API ou por desabilitação. É o que protege o reembolso de 7 dias do CDC num modelo com split, e o que evita que o estorno caia na conta principal, que o Asaas define como **garantidora do saldo negativo da subconta**. O Pagar.me oferece controle mais fino de responsabilidade (`options.liable` transfere o chargeback ao recebedor), mas sem caminho público de retenção com liberação manual. Requisitos que passam a ser condição de contrato: **operação em CNPJ** (subconta exige PJ) e **homologação antecipada** para sair dos limites do período de avaliação regulatória.
 
 ### 8.3 Requisitos transversais de pagamento
 - Webhook idempotente (o mesmo evento pode chegar duas vezes — nunca liberar duas licenças).
@@ -597,7 +841,7 @@ Já detalhado em §6.5: arrependimento em 7 dias, cancelamento fácil com protoc
 - **Lei e jurisprudência** — livres de direito autoral (Lei 9.610/98, art. 8º, IV). Reprodução permitida; a obrigação é de exatidão.
 - **Doutrina** — protegida. Citação apenas dentro dos limites do art. 46 da mesma lei, com atribuição.
 - **Imagens e trilhas** — só de banco licenciado ou próprias.
-- **Marca** — registrar no INPI (classe 41). Atenção: "Aprendendo o Direito" é bastante descritivo, o que aumenta o risco de indeferimento por falta de distintividade. **Registrar como marca mista** (nome + logo) melhora a chance. Verificar disponibilidade antes de investir em identidade visual.
+- **Marca** — registrar no INPI (classe 41). Atenção: "Aprimore o Saber" tem carga descritiva (o verbo remete direto ao serviço de ensino), o que traz algum risco de indeferimento por falta de distintividade — menor que o do nome anterior, "Aprendendo o Direito", mas não nulo. **Registrar como marca mista** (nome + logo) melhora a chance. Verificar disponibilidade antes de investir em identidade visual.
 
 ### 12.5 Publicidade profissional
 Se o responsável for advogado inscrito na OAB, as regras de publicidade da entidade se aplicam. Conteúdo educacional é permitido; o cuidado é não misturar a plataforma com captação de clientela para escritório.
@@ -682,8 +926,12 @@ Revisão espaçada · trilhas por objetivo (faculdade, OAB, concurso) · tutor d
 | 9 | **Conformidade com menores** (ECA Digital) falha ou incompleta | Alto | Verificação de idade + consentimento parental como requisito de Fase 1/2; compra sempre no CPF do responsável; sem publicidade comportamental |
 | 10 | **Marca descritiva** indeferida no INPI | Baixo | Registro como marca mista; verificar antes de investir na identidade |
 | 11 | **Conflito de interesse na publicidade** — anunciar cursos concorrentes ou conteúdo enganoso | Médio | Curadoria editorial em contrato, direito de recusa, identificação obrigatória de publicidade (CDC art. 36) |
-| 12 | **Disputa com professor sobre comissão** | Médio | Contrato com percentual e critério de rateio explícitos, extrato venda a venda, prazo formal de contestação na apuração |
+| 12 | **Disputa com professor sobre comissão** — e, no portal (§5.10.1), sobre quem trouxe o aluno | Médio | Contrato com percentual e critério de rateio explícitos, extrato venda a venda, prazo formal de contestação na apuração. No acréscimo por indicação: vínculo gravado no clique e imutável pelo professor, com data de origem visível no extrato dele |
 | 13 | **Vaga falsa ou golpe no mural** expõe alunos | Médio | Aprovação prévia obrigatória, CNPJ validado, denúncia pelo aluno, disclaimer de responsabilidade do anunciante, expiração automática em 3 meses |
+| 14 | **Vazamento entre portais** — falha na resolução de tenant mostra acervo ou aluno de um portal a outro (§5.10) | Crítico | **Escrita já protegida no banco** por `db/018_portal.sql`: chaves compostas `(pai_id, portal_id)` tornam impossível pendurar conteúdo, licença ou pedido de um portal em outro. Falta o lado da **leitura** — escopo aplicado na camada de consulta, nunca só na de exibição, com suíte de testes por tenant tão rigorosa quanto a do motor de licença |
+| 15 | **Split libera o dinheiro antes do prazo de arrependimento** — reembolso do CDC ou chargeback chega depois de o professor já ter sacado (§5.10) | Alto | Retenção e reserva parametrizadas no contrato do portal; fallback de débito na apuração seguinte (§5.6.1); confirmar com o gateway antes de assinar |
+| 16 | **Conteúdo de terceiro publicado direto no nosso domínio** — ilícito, plágio ou propaganda enganosa em portal de professor (§5.10) | Alto | Declaração contratual de titularidade, identificação do responsável em cada portal, canal de denúncia, remoção rápida após notificação e direito de desligamento imediato |
+| 17 | **Dois produtos disputando a mesma capacidade de execução** — portal do professor em paralelo à Fase 1, que o §16 já estima em 6 a 9 meses | Crítico | Piloto fechado com um único professor e escopo congelado; contrato assinado antes de escrever código; adiar tudo que estiver na lista "fora do escopo" do §5.10 |
 
 ---
 
@@ -692,7 +940,7 @@ Revisão espaçada · trilhas por objetivo (faculdade, OAB, concurso) · tutor d
 Estas travam o detalhamento e precisam de resposta antes da Fase 1:
 
 1. **Ordem das ondas de lançamento** — o catálogo das 11 matérias está definido (§4); falta ordenar quais 3 a 5 abrem a 1ª onda e a sequência das demais. Sugestão de 1ª onda: Introdução ao Direito, Carreiras Jurídicas e Noções de Constitucional (porta de entrada + maior busca), validar na Fase 0.
-2. **CNPJ ou pessoa física?** Define emissão de NF, contrato com gateway e tributação.
+2. ~~**CNPJ ou pessoa física?**~~ **RESPONDIDA (set/2026): CNPJ.** Não por preferência, mas por exigência: o portal do professor (§5.10) depende de subcontas no gateway, e *"contas de pessoa física (CPF) não podem criar subcontas"* por regra do Banco Central. Permanece em aberto apenas o desdobramento tributário (regime e emissão de NF).
 3. **Modelo de remuneração dos professores convidados** — cachê fixo por aula ou percentual da receita da matéria? Muda o desenho do split.
 4. **Certificado de conclusão** entra em qual fase, e com qual carga horária declarada?
 5. **Público-alvo primário** — graduando, candidato à OAB ou leigo? A resposta muda tom, formato da aula e estilo do exercício.
@@ -702,6 +950,12 @@ Estas travam o detalhamento e precisam de resposta antes da Fase 1:
 9. **Prazo de anonimização após bloqueio por inatividade** — sugestão de 24 meses de conta bloqueada antes de anonimizar os dados; confirmar o prazo.
 10. **Tabela de preços da publicidade** — valores por posição/formato/período para o mídia kit; definir quando houver os primeiros números de audiência.
 11. **Percentuais de comissão dos professores** — faixa padrão a ofertar em contrato (mercado pratica de 20% a 50% conforme exclusividade e produção); definir antes de fechar os primeiros parceiros.
+12. ~~**Retenção no split (§5.10)**~~ **RESPONDIDA (set/2026): sim, via Conta Escrow do Asaas.** Retenção por subconta com prazo próprio (`daysToExpire`) e liberação automática, manual por API ou por desabilitação; sem ela, o estorno recai sobre a conta principal, que o Asaas define como garantidora. Ver §5.10 e §8.2. Resta negociar **o custo recorrente da Conta Escrow por subconta** e obter **homologação regulatória** antes do primeiro portal, para escapar do teto de R$ 2.000 por subconta do período de avaliação.
+13. ~~**Valores do portal do professor**~~ **RESPONDIDA (03/09/2026): R$ 149/mês + 10% sobre as vendas** (mais os 5 p.p. de indicação do §5.10.1), com **100 GB de armazenamento e 300 GB de banda/mês** inclusos e **excedente a R$ 0,40/GB**. Decidida sobre o levantamento de custo do §5.10.3; aplicada em `db/023_plano_lancamento.sql`. Um segundo plano de volume (R$ 249 + 8%) entra quando existir portal grande.
+14. **Quem é o vendedor perante o aluno do portal** — com split, a plataforma normalmente figura como intermediadora. Definir quem emite a nota ao aluno final, quem responde ao Procon e o que exigimos de KYC do professor para abrir a subconta (CPF ou CNPJ, documentos, prazo).
+15. **Política da máscara** — regras de escolha do subdomínio (lista de nomes proibidos, colisão com rotas do sistema, marcas de terceiros), se há aprovação manual, e o que acontece com o endereço após o encerramento (prazo de reserva e destino da URL antiga).
+16. **Saída do professor** — prazo para exportar vídeos e base de alunos, prazo até a eliminação definitiva no nosso lado, e o que acontece com os alunos de licença vigente quando o portal encerra. Precisa estar no contrato antes do primeiro cliente, não depois.
+17. **Comissão do professor na venda pela NOSSA vitrine (§5.10.2, etapa 5)** — quanto ele recebe quando um aluno da plataforma compra o curso dele. O sistema nasceu com **50%** (`portal_plano.comissao_vitrine_pp`, copiada ao contrato no aceite) como hipótese: nós arcamos com gateway, marketing e suporte, ele com a produção. A faixa de mercado do §16.11 (20 a 50%) vale de referência. Definir antes de o primeiro curso compartilhado ir à vitrine.
 
 ---
 
@@ -713,3 +967,15 @@ Estas travam o detalhamento e precisam de resposta antes da Fase 1:
 - [Dados abertos do LexML — Projeto LexML / Senado Federal](https://projeto.lexml.gov.br/transparencia/dados-abertos)
 - [Cursos online sem ciladas: direitos do consumidor no EAD](https://codigoalpha.blog/cursos-online-direitos-do-consumidor-ead/)
 - [LGPD na educação em 2026: o impacto do ECA Digital — Confidata](https://confidata.com.br/blog/lgpd-educacao-2026-impacto-eca-digital)
+- [Split de pagamento — documentação do Asaas](https://docs.asaas.com/docs/split-de-pagamentos)
+- [Conta Escrow — documentação do Asaas](https://docs.asaas.com/docs/introducao-conta-escrow)
+- [Criação de subcontas — documentação do Asaas](https://docs.asaas.com/docs/criacao-de-subcontas)
+- [Termos e Condições de Uso — Asaas (responsabilidade da conta principal por saldo negativo de subconta)](https://central.ajuda.asaas.com/hc/pt-br/articles/32096847160859-Termos-e-Condi%C3%A7%C3%B5es-de-Uso)
+- [Regras de split — documentação do Pagar.me](https://docs.pagar.me/reference/split-1)
+- [Configurações de transferência do recebedor — Pagar.me](https://docs.pagar.me/reference/atualizar-informa%C3%A7%C3%B5es-de-transfer%C3%AAncia-1)
+- [Preço do Bunny Stream — armazenamento e entrega](https://bunny.net/pricing/stream/)
+- [Preços e taxas do Asaas](https://www.asaas.com/precos-e-taxas)
+- [Conta Escrow do Asaas — o que é e quanto custa](https://central.ajuda.asaas.com/hc/pt-br/articles/34119457118875-O-que-%C3%A9-a-Conta-Escrow-do-Asaas)
+- [Taxa da Hotmart em 2026 — EngagED](https://engaged.com.br/blog/taxa-hotmart-quanto-custa-vender/)
+- [Hotmart ou Kiwify em 2026 — EngagED](https://engaged.com.br/blog/hotmart-ou-kiwify-qual-escolher/)
+- [Cotação do dólar — Investing.com](https://br.investing.com/currencies/usd-brl)

@@ -32,13 +32,15 @@ async function hash(s) {
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL
-    ?? 'postgres://aprendendo:aprendendo@localhost:5432/aprendendoodireito',
+    ?? 'postgres://aprimore:aprimore@localhost:5432/aprimoreosaber',
 });
 
 const { rows } = await pool.query(
-  `INSERT INTO usuario (nome, email, senha_hash, papel)
-   VALUES ($1, lower($2), $3, 'admin')
-   ON CONFLICT (lower(email)) DO UPDATE
+  // portal_id 0 e a plataforma (db/018_portal.sql): admin e da retaguarda
+  // do site principal, nao de portal de professor.
+  `INSERT INTO usuario (portal_id, nome, email, senha_hash, papel)
+   VALUES (0, $1, lower($2), $3, 'admin')
+   ON CONFLICT (portal_id, lower(email)) DO UPDATE
      SET papel = 'admin', senha_hash = EXCLUDED.senha_hash, nome = EXCLUDED.nome
    RETURNING id, email`,
   [nome, email, await hash(senha)],

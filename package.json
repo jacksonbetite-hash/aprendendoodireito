@@ -1,5 +1,5 @@
 {
-  "name": "aprendendoodireito",
+  "name": "aprimoreosaber",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,9 +8,12 @@
     "start": "next start",
     "migrate": "node scripts/migrate.mjs",
     "seed": "node scripts/migrate.mjs --seed",
+    "leis": "node scripts/importar-leis.mjs",
     "test": "node --test lib/*.test.ts",
     "contraste": "node scripts/contraste.mjs",
-    "e2e": "node testes-e2e/autenticacao.mjs && node testes-e2e/comercial.mjs && node testes-e2e/administracao.mjs",
+    "video": "node scripts/gerar-video-hero.mjs",
+    "video:local": "node scripts/semear-video-local.mjs",
+    "e2e": "node testes-e2e/autenticacao.mjs && node testes-e2e/comercial.mjs && node testes-e2e/administracao.mjs && node testes-e2e/retaguarda.mjs",
     "confirmar-pagamento": "node scripts/confirmar-pagamento.mjs"
   },
   "dependencies": {

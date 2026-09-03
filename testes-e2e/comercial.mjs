@@ -61,7 +61,7 @@ check(true, 'conta criada');
 
 // aula licenciada bloqueada para conta nova
 await p.goto(base + '/aula/clausulas-petreas', { waitUntil: 'load' });
-check(await p.getByText('matéria licenciada').first().isVisible().catch(() => false)
+check(await p.getByText('curso licenciado').first().isVisible().catch(() => false)
    || await p.getByText('teste gratuito libera').first().isVisible().catch(() => false),
   'conta nova esbarra no paywall');
 
@@ -83,7 +83,7 @@ check(temBotaoTrial === 0, 'o teste não é oferecido duas vezes');
 // o caso que importa
 await p.selectOption('form:has(input[value=MATERIA]) select[name=materiaId]',
   { label: 'Noções de Direito Constitucional' });
-await p.click('form:has(input[value=MATERIA]) button:has-text("Assinar esta matéria")');
+await p.click('form:has(input[value=MATERIA]) button:has-text("Assinar este curso")');
 await p.waitForURL('**/checkout/**', { timeout: 20000 });
 const referencia = p.url().split('/checkout/')[1];
 check(/^AD-\d{8}-[A-F0-9]{6}$/.test(referencia), `pedido aberto (${referencia})`);

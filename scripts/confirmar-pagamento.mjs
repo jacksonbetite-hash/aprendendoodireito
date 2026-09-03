@@ -40,9 +40,14 @@ if (!r.ok) {
   process.exit(1);
 }
 if (resposta.processado) {
+  // Referência PF- é fatura de portal de professor (§5.10.2); o resto é
+  // pedido de aluno. A resposta do webhook muda de acordo.
+  const efeito = resposta.faturaId !== undefined
+    ? `fatura ${resposta.faturaId} paga${resposta.portalAtivado ? ' — portal ATIVADO' : ''}`
+    : `licença ${resposta.licencaId} emitida`;
   console.log(resposta.jaProcessado
-    ? `· evento repetido — nada mudou (licença ${resposta.licencaId}). É o comportamento correto.`
-    : `✔ pagamento confirmado — licença ${resposta.licencaId} emitida para ${referencia}`);
+    ? `· evento repetido — nada mudou (${efeito}). É o comportamento correto.`
+    : `✔ pagamento confirmado — ${efeito} para ${referencia}`);
 } else {
   console.log(`· não processado: ${resposta.motivo}`);
 }

@@ -26,7 +26,7 @@ const p = await ctx.newPage();
 
 // entra como admin
 await p.goto(base + '/entrar', { waitUntil: 'load' });
-await p.fill('input[name=email]', 'admin@aprendendoodireito.com.br');
+await p.fill('input[name=email]', 'admin@aprimoreosaber.com.br');
 await p.fill('input[name=senha]', senha);
 await p.click('form.formulario button[type=submit]');
 await p.waitForURL('**/painel*', { timeout: 20000 });
@@ -63,7 +63,10 @@ const precoDepois = (await p.locator('.plano.destaque .valor').textContent())?.t
 check(precoDepois.includes(valorTeste), `planos já mostra o preço novo (${precoDepois})`);
 
 await p.goto(base + '/catalogo', { waitUntil: 'load' });
-check((await p.locator('.cartao-area div').first().textContent())?.includes(valorTeste),
+// O catálogo passou a montar os cartões em FiltroCursos.tsx: o preço
+// vive em `.cartao-curso .linha-preco strong`, e só no cartão publicado
+// (o cartão fantasma tem `.linha-preco` sem preço).
+check((await p.locator('.cartao-curso .linha-preco strong').first().textContent())?.includes(valorTeste),
   'o catálogo também reflete o preço novo (uma fonte de verdade)');
 
 // restaura
@@ -108,7 +111,7 @@ check(/preco\.(alterado|corrigido)/.test(auditoria ?? ''),
   'auditoria registrou a alteração de preço');
 check(auditoria?.includes('licenca.concedida'), 'auditoria registrou a concessão');
 check(auditoria?.includes('licenca.estendida'), 'auditoria registrou a extensão');
-check(auditoria?.includes('admin@aprendendoodireito.com.br'), 'auditoria registrou QUEM fez');
+check(auditoria?.includes('admin@aprimoreosaber.com.br'), 'auditoria registrou QUEM fez');
 
 await p.goto(base + '/admin/alunos', { waitUntil: 'load' });
 await p.waitForTimeout(600);

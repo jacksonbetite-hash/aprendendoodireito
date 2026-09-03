@@ -16,7 +16,7 @@ export default async function Cadastrar() {
         <div className="cartao cartao-auth">
           <h1>Criar conta grátis</h1>
           <p className="sub">
-            Dá acesso ao vade-mécum completo, à 1ª aula de cada assunto e ao teste de 7 dias.
+            Dá acesso à biblioteca completa, à 1ª aula de cada assunto e ao teste de 7 dias.
           </p>
           <FormCadastro acao={criarConta} />
         </div>

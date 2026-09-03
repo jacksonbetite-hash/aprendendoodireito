@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Icone } from '../componentes.tsx';
-import { sair } from '../acoes-auth.ts';
+import LateralAluno from '../LateralAluno.tsx';
 import { acaoCancelar, acaoReembolsar } from '../acoes-comerciais.ts';
 import { alunoAtual, licencasDo } from '../../lib/sessao.ts';
 import { pedidosDo, assinaturasDo } from '../../lib/checkout.ts';
@@ -28,19 +28,7 @@ export default async function Conta() {
 
   return (
     <div className="app">
-      <aside className="lateral">
-        <div className="lateral-marca">
-          <span className="nome">Minha Jornada</span>
-          <span className="sub">Estudante de Direito</span>
-        </div>
-        <Link className="item-lateral" href="/painel"><Icone nome="dashboard" /> Dashboard</Link>
-        <Link className="item-lateral" href="/catalogo"><Icone nome="menu_book" /> Catálogo</Link>
-        <Link className="item-lateral" href="/vademecum"><Icone nome="gavel" /> Vade-mécum</Link>
-        <span className="item-lateral ativo"><Icone nome="payments" /> Minha conta</span>
-        <form action={sair} style={{ marginTop: 'auto' }}>
-          <button className="item-lateral saida" type="submit"><Icone nome="logout" /> Sair</button>
-        </form>
-      </aside>
+      <LateralAluno papel={aluno.papel} />
 
       <div className="conteudo">
         <div className="barra-superior">

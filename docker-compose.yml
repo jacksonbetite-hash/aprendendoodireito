@@ -8,9 +8,9 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: aprendendo
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aprendendo}
-      POSTGRES_DB: aprendendoodireito
+      POSTGRES_USER: aprimore
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aprimore}
+      POSTGRES_DB: aprimoreosaber
       # pt_BR no ordenamento e busca textual
       LANG: pt_BR.UTF-8
     volumes:
@@ -18,9 +18,9 @@ services:
     ports:
       # Só no localhost: o banco não fica exposto à rede. Serve ao fluxo
       # de desenvolvimento do README; em produção, remova o mapeamento.
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${PORTA_BANCO:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aprendendo -d aprendendoodireito"]
+      test: ["CMD-SHELL", "pg_isready -U aprimore -d aprimoreosaber"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -32,13 +32,26 @@ services:
 
   web:
     build: .
-    image: aprendendoodireito:latest
+    image: aprimoreosaber:latest
     environment:
-      DATABASE_URL: postgres://aprendendo:${POSTGRES_PASSWORD:-aprendendo}@db:5432/aprendendoodireito
+      DATABASE_URL: postgres://aprimore:${POSTGRES_PASSWORD:-aprimore}@db:5432/aprimoreosaber
       NODE_ENV: production
       PROVEDOR_PAGAMENTO: ${PROVEDOR_PAGAMENTO:-simulado}
       WEBHOOK_SEGREDO: ${WEBHOOK_SEGREDO:-segredo-de-desenvolvimento}
       ALUNO_DEMO: ${ALUNO_DEMO:-}
+      # §5.10 — domínio sob o qual os portais de professor vivem.
+      # `jackson.<DOMINIO_BASE>` resolve o portal do Jackson; o domínio
+      # nu é a plataforma. Em desenvolvimento, `jackson.localhost` funciona.
+      DOMINIO_BASE: ${DOMINIO_BASE:-localhost}
+      # §10 — os vídeos vivem no volume `midia`, nunca na imagem: assar
+      # 100 GB de aula num `docker build` inviabilizaria todo deploy.
+      VIDEO_SEGREDO: ${VIDEO_SEGREDO:-}
+      VIDEO_RAIZ: /midia/video
+      # Vazio = o Node entrega os bytes. Com o perfil `vps`, o compose
+      # sobe o nginx e esta variável passa a apontar a location interna.
+      VIDEO_ACCEL_REDIRECT: ${VIDEO_ACCEL_REDIRECT:-}
+    volumes:
+      - midia:/midia
     ports:
       - "${PORTA_WEB:-3000}:3000"
     depends_on:
@@ -52,5 +65,26 @@ services:
       retries: 3
       start_period: 25s
 
+  # Só sobe com `docker compose --profile vps up -d`. Localmente o Node dá
+  # conta de entregar o vídeo sozinho, e um proxy a mais só atrapalharia o
+  # `next dev`. Na VPS ele é obrigatório: ver nginx/aprimoreosaber.conf.
+  nginx:
+    profiles: ["vps"]
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/aprimoreosaber.conf:/etc/nginx/conf.d/default.conf:ro
+      # Somente leitura: o nginx entrega aula, nunca grava.
+      - midia:/midia:ro
+    ports:
+      - "${PORTA_HTTP:-80}:80"
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   dados-postgres:
+  # Mídia das aulas. Volume nomeado, e não bind mount, para não depender do
+  # layout de pastas do host — mas com um aviso que vale repetir: este
+  # volume NÃO entra no backup do Postgres. Ele precisa de rotina própria.
+  midia:

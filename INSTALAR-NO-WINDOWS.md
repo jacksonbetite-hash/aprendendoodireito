@@ -1,4 +1,4 @@
-# Instalar em `C:\Users\Usuario\Documents\Aprendendoodireito`
+# Instalar em `C:\Users\Usuario\Documents\Aprimoreosaber`
 
 Eu rodo num contêiner na nuvem e **não tenho acesso à sua máquina** — não
 consigo escrever nessa pasta daqui. O que dá para fazer, e é o caminho normal,
@@ -11,17 +11,17 @@ Abra o **PowerShell** e cole:
 ```powershell
 cd "$env:USERPROFILE\Documents"
 git clone -b claude/discovery-repo-prototype-xgljgy `
-  https://github.com/jacksonbetite-hash/aprendendoodireito.git Aprendendoodireito
-cd Aprendendoodireito
+  https://github.com/jacksonbetite-hash/aprendendoodireito.git Aprimoreosaber
+cd Aprimoreosaber
 ```
 
-> Se a pasta `Aprendendoodireito` já existir com o `discovery.md` dentro,
-> mova-a antes (`Rename-Item Aprendendoodireito Aprendendoodireito-antigo`) —
+> Se a pasta `Aprimoreosaber` já existir com o `discovery.md` dentro,
+> mova-a antes (`Rename-Item Aprimoreosaber Aprimoreosaber-antigo`) —
 > o `git clone` precisa de uma pasta vazia.
 
 Sem Git instalado? Baixe o ZIP em
 `https://github.com/jacksonbetite-hash/aprendendoodireito/archive/refs/heads/claude/discovery-repo-prototype-xgljgy.zip`,
-extraia e renomeie a pasta para `Aprendendoodireito`.
+extraia e renomeie a pasta para `Aprimoreosaber`.
 
 ## 2. Instalar o Docker Desktop
 
@@ -136,7 +136,7 @@ Sua rede inspeciona HTTPS (comum em rede corporativa). Exporte a CA da sua
 empresa para um arquivo e construa assim:
 
 ```powershell
-docker build --secret id=ca_bundle,src=C:\caminho\ca.crt -t aprendendoodireito .
+docker build --secret id=ca_bundle,src=C:\caminho\ca.crt -t aprimoreosaber .
 docker compose up -d
 ```
 
@@ -163,7 +163,7 @@ Para desenvolver com recarga automática (precisa de Node 22):
 
 ```powershell
 docker compose up -d db
-$env:DATABASE_URL="postgres://aprendendo:aprendendo@localhost:5432/aprendendoodireito"
+$env:DATABASE_URL="postgres://aprimore:aprimore@localhost:5432/aprimoreosaber"
 npm install
 npm run migrate
 npm run dev

@@ -6,6 +6,24 @@ import {
   autenticar, cadastrar, criarSessao, revogarSessao,
   validarEmail, validarSenha, COOKIE_SESSAO, DURACAO_SESSAO_DIAS,
 } from '../lib/auth.ts';
+import { portalIdAtual } from '../lib/portal-consultas.ts';
+import { vincularIndicacao } from '../lib/portal-indicacao.ts';
+import { COOKIE_INDICACAO } from '../lib/portal.ts';
+
+/**
+ * §5.10.1 — se este navegador chegou ao portal pelo nosso anúncio, o
+ * token está no cookie; agora que existe um aluno, o vínculo fecha. O
+ * cookie é apagado em seguida: já cumpriu o papel, e ficar ali só serviria
+ * para tentar vincular de novo quem já está vinculado.
+ */
+async function vincularIndicacaoDoCookie(usuarioId: number) {
+  const jar = await cookies();
+  const token = jar.get(COOKIE_INDICACAO)?.value;
+  if (!token) return;
+  const portalId = await portalIdAtual();
+  if (portalId !== 0) await vincularIndicacao(token, usuarioId, portalId);
+  jar.delete(COOKIE_INDICACAO);
+}
 
 export interface EstadoForm { erro?: string; aviso?: string }
 
@@ -26,7 +44,8 @@ export async function entrar(_estado: EstadoForm, dados: FormData): Promise<Esta
   const senha = String(dados.get('senha') ?? '');
   if (!email || !senha) return { erro: 'Preencha e-mail e senha.' };
 
-  const r = await autenticar(email, senha);
+  // §5.10: o login vale dentro do portal em que foi feito.
+  const r = await autenticar(await portalIdAtual(), email, senha);
   if (!r.ok) {
     // Mensagem única de propósito: dizer "e-mail não existe" entrega
     // quais e-mails estão cadastrados a quem estiver sondando.
@@ -36,6 +55,7 @@ export async function entrar(_estado: EstadoForm, dados: FormData): Promise<Esta
   }
 
   await abrirSessao(r.usuarioId);
+  await vincularIndicacaoDoCookie(r.usuarioId);
   redirect(r.statusConta === 'BLOQUEADA_INATIVIDADE' ? '/painel?reativar=1' : '/painel');
 }
 
@@ -50,12 +70,13 @@ export async function criarConta(_estado: EstadoForm, dados: FormData): Promise<
   const erroSenha = validarSenha(senha);
   if (erroSenha) return { erro: erroSenha };
 
-  const id = await cadastrar(nome, email, senha);
+  const id = await cadastrar(await portalIdAtual(), nome, email, senha);
   if (id === null) {
     return { erro: 'Já existe uma conta com esse e-mail. Tente entrar.' };
   }
 
   await abrirSessao(id);
+  await vincularIndicacaoDoCookie(id);
   redirect('/painel?bemvindo=1');
 }
 
