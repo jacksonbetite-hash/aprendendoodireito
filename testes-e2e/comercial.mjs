@@ -83,6 +83,7 @@ check(temBotaoTrial === 0, 'o teste não é oferecido duas vezes');
 // o caso que importa
 await p.selectOption('form:has(input[value=MATERIA]) select[name=materiaId]',
   { label: 'Noções de Direito Constitucional' });
+await p.fill('form:has(input[value=MATERIA]) input[name=cpf]', '529.982.247-25');
 await p.click('form:has(input[value=MATERIA]) button:has-text("Assinar este curso")');
 await p.waitForURL('**/checkout/**', { timeout: 20000 });
 const referencia = p.url().split('/checkout/')[1];

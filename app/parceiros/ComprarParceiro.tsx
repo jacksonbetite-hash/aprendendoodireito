@@ -16,8 +16,8 @@ type Acao = (e: EstadoComercial, d: FormData) => Promise<EstadoComercial>;
  * o professor recebe comissão.
  */
 export default function ComprarParceiro({
-  acao, materiaId, tabela, logado, vende,
-}: { acao: Acao; materiaId: number; tabela: Tabela; logado: boolean; vende: boolean }) {
+  acao, materiaId, tabela, logado, vende, precisaCpf,
+}: { acao: Acao; materiaId: number; tabela: Tabela; logado: boolean; vende: boolean; precisaCpf: boolean }) {
   const [estado, enviar, pendente] = useActionState(acao, {});
 
   if (!vende) {
@@ -43,6 +43,14 @@ export default function ComprarParceiro({
       )}
       <input type="hidden" name="produto" value="MATERIA" />
       <input type="hidden" name="materiaId" value={materiaId} />
+      {precisaCpf && (
+        <>
+          <label className="caption suave" htmlFor="parceiro-cpf">CPF (o meio de pagamento exige)</label>
+          <input id="parceiro-cpf" name="cpf" type="text" inputMode="numeric" required
+                 placeholder="000.000.000-00" maxLength={14}
+                 style={{ padding: '10px 12px', borderRadius: 'var(--r)', border: '2px solid var(--borda-controle)', background: 'var(--surface-container-lowest)', color: 'var(--on-surface)', fontFamily: 'inherit' }} />
+        </>
+      )}
       <label className="caption suave" htmlFor="parceiro-periodo">Período</label>
       <select id="parceiro-periodo" name="periodo" defaultValue="mensal"
               style={{ padding: '10px 12px', borderRadius: 'var(--r)', border: '2px solid var(--borda-controle)', background: 'var(--surface-container-lowest)', color: 'var(--on-surface)', fontFamily: 'inherit' }}>

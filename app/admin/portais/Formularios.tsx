@@ -84,6 +84,11 @@ export function FormPlano({ acao, plano }: { acao: Acao; plano?: PlanoPortal }) 
           <input name="porGbExcedente" inputMode="decimal" required
             defaultValue={plano ? reais(plano.centavosPorGbExcedente) : '0,90'} />
         </label>
+        <label>
+          Domínio próprio (R$/mês)
+          <input name="dominioProprio" inputMode="decimal" placeholder="vazio = não oferece"
+            defaultValue={plano?.centavosDominioProprio != null ? reais(plano.centavosDominioProprio) : ''} />
+        </label>
         <label className="marcador">
           <input type="checkbox" name="ativo" defaultChecked={plano?.ativo ?? true} />
           Plano em oferta
@@ -160,7 +165,10 @@ export function FormPortal({
             Domínio próprio
             <input name="dominioProprio" defaultValue={portal.dominioProprio ?? ''}
               placeholder="site.dominiodele.com.br" />
-            <span className="dica">Upgrade pago da Fase 2 — a coluna já existe, sem uso.</span>
+            <span className="dica">
+              Definido aqui, já vale como verificado. O professor cadastra o dele no painel
+              e verifica o CNAME; o preço está no plano.
+            </span>
           </label>
         )}
       </div>

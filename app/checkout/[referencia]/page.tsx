@@ -19,12 +19,16 @@ export default async function Checkout({ params }: { params: Promise<{ referenci
   const pedido = await buscarPedidoPorReferencia(referencia, aluno.id);
   if (!pedido) notFound();
 
-  const detalhe = (pedido.detalhe ?? {}) as { idExterno?: string };
+  const detalhe = (pedido.detalhe ?? {}) as { idExterno?: string; copiaECola?: string | null; linkPagamento?: string | null };
   const provedor = provedorAtual();
   const pago = pedido.status === 'PAGO';
+  // O código guardado é o do gateway; a reconstrução é só para pedidos do
+  // simulado anteriores a este campo.
   const copiaECola = pedido.meio === 'PIX'
-    ? `00020126580014BR.GOV.BCB.PIX0136${detalhe.idExterno ?? referencia}5204000053039865802BR5916APRIMORE O SABER6009SAO PAULO62070503***6304`
+    ? (detalhe.copiaECola
+       ?? `00020126580014BR.GOV.BCB.PIX0136${detalhe.idExterno ?? referencia}5204000053039865802BR5916APRIMORE O SABER6009SAO PAULO62070503***6304`)
     : null;
+  const linkPagamento = detalhe.linkPagamento ?? null;
 
   return (
     <Pagina ativo="planos">
@@ -85,6 +89,11 @@ export default async function Checkout({ params }: { params: Promise<{ referenci
                     (PCI-DSS SAQ-A). A renovação é automática e avisamos 3 dias antes de cada
                     cobrança.
                   </p>
+                  {linkPagamento && (
+                    <a className="btn btn-primario btn-bloco" href={linkPagamento} target="_blank" rel="noreferrer">
+                      Pagar com cartão na página segura
+                    </a>
+                  )}
                 </>
               )}
 

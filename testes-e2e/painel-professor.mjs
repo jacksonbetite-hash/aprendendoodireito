@@ -45,6 +45,12 @@ try {
   await p.fill('input[name=email]', EMAIL);
   await p.fill('input[name=senha]', 'senha-bem-longa');
   await p.fill('input[name=cnpj]', '11.222.333/0001-81');
+  await p.fill('input[name=telefone]', '(11) 98765-4321');
+  await p.fill('input[name=renda]', '8000');
+  await p.fill('input[name=cep]', '01310-100');
+  await p.fill('input[name=logradouro]', 'Av. Paulista');
+  await p.fill('input[name=numero]', '1000');
+  await p.fill('input[name=bairro]', 'Bela Vista');
   await p.fill('input[name=nomeExibicao]', 'Direito com a Profa. Painel');
   await p.fill('input[name=mascara]', MASCARA);
   await p.check('input[name=aceite]');

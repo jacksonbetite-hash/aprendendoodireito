@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { alunoAtual } from '../lib/sessao.ts';
 import {
-  abrirPedido, ativarTrial, cancelarAssinatura, pedirReembolso,
-} from '../lib/checkout.ts';
+  abrirPedido, ativarTrial, cancelarAssinatura, pedirReembolso, garantirCpf } from '../lib/checkout.ts';
 import type { MeioPagamento } from '../lib/pagamento.ts';
 import type { Periodo, Produto } from '../lib/precos.ts';
 import { portalIdAtual } from '../lib/portal-consultas.ts';
@@ -50,6 +49,7 @@ export async function acaoComprar(_e: EstadoComercial, dados: FormData): Promise
 
   let referencia: string;
   try {
+    await garantirCpf(aluno.id, String(dados.get('cpf') ?? ''));
     const pedido = await abrirPedido(
       await portalIdAtual(), aluno.id, aluno.email, produto, periodo, materiaId, meio,
     );

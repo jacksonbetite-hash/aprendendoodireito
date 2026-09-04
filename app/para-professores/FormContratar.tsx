@@ -49,6 +49,46 @@ export default function FormContratar({ acao, dominio }: { acao: Acao; dominio: 
           com CNPJ — regra do Banco Central, não escolha nossa.
         </span>
       </label>
+      <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 14 }}>
+        <legend className="caption suave">Dados do responsável</legend>
+        <p className="dica" style={{ margin: 0 }}>
+          A conta que recebe as suas vendas é aberta no meio de pagamento em nome da sua
+          empresa. Ele exige estes dados para abrir a conta — nós só repassamos.
+        </p>
+        <label>
+          Celular
+          <input name="telefone" type="tel" autoComplete="tel" required maxLength={20}
+                 placeholder="(11) 99999-9999" />
+        </label>
+        <label>
+          Renda mensal (R$)
+          <input name="renda" type="number" min={1} step="0.01" required placeholder="5000" />
+        </label>
+        <label>
+          CEP
+          <input name="cep" type="text" inputMode="numeric" autoComplete="postal-code" required
+                 maxLength={9} placeholder="00000-000" />
+        </label>
+        <label>
+          Logradouro
+          <input name="logradouro" type="text" autoComplete="address-line1" required maxLength={120}
+                 placeholder="Rua, avenida…" />
+        </label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+          <label>
+            Número
+            <input name="numero" type="text" required maxLength={12} />
+          </label>
+          <label>
+            Complemento
+            <input name="complemento" type="text" maxLength={60} placeholder="opcional" />
+          </label>
+        </div>
+        <label>
+          Bairro
+          <input name="bairro" type="text" autoComplete="address-level3" required maxLength={80} />
+        </label>
+      </fieldset>
       <label>
         Nome do seu portal
         <input name="nomeExibicao" type="text" required maxLength={80}
@@ -69,16 +109,16 @@ export default function FormContratar({ acao, dominio }: { acao: Acao; dominio: 
       <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
         <legend className="caption suave" style={{ marginBottom: 8 }}>Primeira mensalidade por</legend>
         <div style={{ display: 'flex', gap: 18 }}>
-          <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="radio" name="meio" value="PIX" defaultChecked /> Pix
           </label>
-          <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="radio" name="meio" value="CARTAO" /> Cartão (renova sozinho)
           </label>
         </div>
       </fieldset>
 
-      <label style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         <input type="checkbox" name="aceite" required style={{ marginTop: 4 }} />
         <span style={{ fontWeight: 400, fontSize: 14 }}>
           Li e aceito o contrato do Portal do Professor: mensalidade e percentual do plano

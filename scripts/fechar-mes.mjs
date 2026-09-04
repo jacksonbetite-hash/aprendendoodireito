@@ -40,6 +40,15 @@ for (const p of portais) {
   }
 }
 
+// §5.6.1 — comissão de vitrine: apura a competência de cada portal com
+// contrato, e aprova sozinha o que passou dos 5 dias sem contestação.
+const { apurarTodos, aprovarVencidas } = await import('../lib/apuracao.ts');
+for (const r of await apurarTodos('script:fechar-mes', competencia)) {
+  console.log(`· comissão ${r.mascara}: ${r.resultado}`);
+}
+const aprovadas = await aprovarVencidas('script:fechar-mes');
+if (aprovadas) console.log(`✔ ${aprovadas} apuração(ões) aprovada(s) por decurso do prazo de contestação`);
+
 const suspensos = await suspenderInadimplentes('script:fechar-mes');
 console.log(suspensos.length
   ? `⚠ suspensos por inadimplência: ${suspensos.map((s) => s.mascara).join(', ')}`

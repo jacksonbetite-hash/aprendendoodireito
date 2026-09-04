@@ -26,6 +26,8 @@ let n = 100;   // faixa própria, longe dos testes de assinatura
 const dados = () => ({
   nome: 'Prof. Subconta', email: `teste-subconta-${++n}@exemplo.com`,
   senha: 'senha-bem-longa', cnpj: '11.222.333/0001-81',
+  telefone: '(11) 98765-4321', rendaMensalCentavos: 800000,
+  endereco: { cep: '01310-100', logradouro: 'Av. Paulista', numero: '1000', bairro: 'Bela Vista' },
   mascara: `teste-subconta-${n}`, nomeExibicao: 'Portal Subconta',
   meio: 'PIX' as const, aceitouContrato: true, ip: '203.0.113.9',
 });

@@ -1,4 +1,5 @@
 import { pool, query, queryOne } from './db.ts';
+import { validarCpf, somenteDigitos } from './portal.ts';
 import {
   provedorAtual, novaReferencia, novoProtocolo, MESES_DO_PERIODO,
   type MeioPagamento, type EventoPagamento,
@@ -146,10 +147,17 @@ export async function abrirPedido(
     split = { walletId: venda.walletId, percentualRetido: percentualAplicado };
   }
 
+  // O gateway real exige o documento do pagador (§12.1: CPF pedido na
+  // compra). Vai o que a conta tem; sem documento, o adaptador real recusa
+  // com mensagem para o aluno — o simulado dispensa.
+  const pagador = await queryOne<{ cpf: string | null; nome: string }>(
+    `SELECT cpf, nome FROM usuario WHERE id = $1`, [usuarioId]);
+
   const referencia = novaReferencia();
   const provedor = provedorAtual();
   const cobranca = await provedor.criarCobranca({
     referencia, centavos: preco.centavos, meio, emailPagador: email,
+    documentoPagador: pagador?.cpf ?? null, nomePagador: pagador?.nome ?? null,
     descricao: nomeMateria ? `Licença — ${nomeMateria}` : 'Passe completo',
     split,
   });
@@ -168,6 +176,8 @@ export async function abrirPedido(
        VALUES ($1, $2, $3, $4)`,
       [p.id, meio, preco.centavos,
        JSON.stringify({ idExterno: cobranca.idExterno, provedor: provedor.nome,
+                        copiaECola: cobranca.copiaECola ?? null,
+                        linkPagamento: cobranca.linkPagamento ?? null,
                         ...(split ? { split } : {}) })],
     );
     await auditar(exec, email, 'pedido.aberto', 'pedido', p.id,
@@ -340,9 +350,10 @@ export async function cancelarAssinatura(usuarioId: number, email: string, assin
 /** Arrependimento em 7 dias: devolução integral, sem justificativa (§6.6). */
 export async function pedirReembolso(usuarioId: number, email: string, pedidoId: number) {
   return emTransacao(async (exec) => {
-    const [p] = await exec<{ id: number; centavos: number; licencaId: number | null; dias: number }>(
+    const [p] = await exec<{ id: number; centavos: number; licencaId: number | null; dias: number; idExterno: string | null }>(
       `SELECT p.id, p.centavos, l.id AS "licencaId",
-              EXTRACT(day FROM now() - p.pago_em)::int AS dias
+              EXTRACT(day FROM now() - p.pago_em)::int AS dias,
+              (SELECT pg.detalhe->>'idExterno' FROM pagamento pg WHERE pg.pedido_id = p.id LIMIT 1) AS "idExterno"
          FROM pedido p LEFT JOIN licenca l ON l.pedido_id = p.id
         WHERE p.id = $1 AND p.usuario_id = $2 AND p.status = 'PAGO'`,
       [pedidoId, usuarioId],
@@ -351,6 +362,11 @@ export async function pedirReembolso(usuarioId: number, email: string, pedidoId:
     if (p.dias > 7) {
       throw new Error('O prazo de arrependimento é de 7 dias corridos a partir da compra (CDC, art. 49).');
     }
+
+    // O dinheiro volta pelo gateway ANTES de o banco registrar: se o
+    // estorno falhar lá, a transação desfaz e o aluno vê o erro — nunca
+    // um "reembolsado" no painel sem dinheiro na conta.
+    if (p.idExterno) await provedorAtual().reembolsar(p.idExterno, p.centavos);
 
     const protocolo = novoProtocolo('REEMB');
     await exec(
@@ -411,4 +427,25 @@ export function buscarPedidoPorReferencia(referencia: string, usuarioId: number)
       WHERE p.referencia = $1 AND p.usuario_id = $2`,
     [referencia, usuarioId],
   );
+}
+
+/**
+ * O CPF do aluno é pedido só na compra (§12.1) — e o gateway real não
+ * emite a cobrança sem ele. Guarda o que veio do formulário; sem nenhum,
+ * só o provedor simulado segue em frente.
+ */
+export async function garantirCpf(usuarioId: number, informado: string): Promise<void> {
+  if (informado.trim()) {
+    if (!validarCpf(informado)) throw new Error('CPF inválido — confira os 11 dígitos.');
+    await query(`UPDATE usuario SET cpf = $2 WHERE id = $1`, [usuarioId, somenteDigitos(informado)]);
+    return;
+  }
+  if (!(await temCpf(usuarioId)) && provedorAtual().cobraDeVerdade) {
+    throw new Error('Informe seu CPF — o meio de pagamento exige para emitir a cobrança.');
+  }
+}
+
+export async function temCpf(usuarioId: number): Promise<boolean> {
+  const u = await queryOne<{ cpf: string | null }>(`SELECT cpf FROM usuario WHERE id = $1`, [usuarioId]);
+  return Boolean(u?.cpf);
 }

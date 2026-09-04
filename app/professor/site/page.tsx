@@ -1,16 +1,20 @@
 import type { Metadata } from 'next';
 import { FormSite } from '../../admin/portais/Formularios.tsx';
 import Enviar from '../Enviar.tsx';
-import { acaoSalvarSite } from '../acoes.ts';
+import FormDominio from './FormDominio.tsx';
+import { acaoSalvarSite, acaoDefinirDominio, acaoVerificarDominio } from '../acoes.ts';
 import { alunoAtual } from '../../../lib/sessao.ts';
 import { portalDoProfessor } from '../../../lib/professor.ts';
+import { situacaoDominio } from '../../../lib/portal-dominio.ts';
 import { dominioBase } from '../../../lib/portal.ts';
+import { brl } from '../../../lib/precos.ts';
 
 export const metadata: Metadata = { title: 'Minha página — Painel do professor' };
 
 export default async function MinhaPagina() {
   const u = (await alunoAtual())!;
   const portal = (await portalDoProfessor(u.id))!;
+  const dominio = await situacaoDominio(portal.id);
   return (
     <>
       <div className="cabecalho-tela">
@@ -36,8 +40,30 @@ export default async function MinhaPagina() {
         </div>
       </div>
 
-      <div className="cartao">
+      <div className="cartao" style={{ marginBottom: 24 }}>
         <FormSite acao={acaoSalvarSite} portalId={portal.id} personalizacao={portal.personalizacao} />
+      </div>
+
+      <div className="cartao">
+        <h2 className="headline-md" style={{ marginBottom: 6 }}>Domínio próprio</h2>
+        {dominio.centavosMes === null ? (
+          <p className="suave">
+            Seu plano não inclui domínio próprio. O portal continua em{' '}
+            <code>{portal.mascara}.{dominioBase()}</code>.
+          </p>
+        ) : (
+          <>
+            <p className="suave" style={{ marginBottom: 16 }}>
+              Além de <code>{portal.mascara}.{dominioBase()}</code>, o portal pode responder no seu
+              endereço — <code>cursos.seudominio.com.br</code>, por exemplo.
+            </p>
+            <FormDominio
+              acaoDefinir={acaoDefinirDominio} acaoVerificar={acaoVerificarDominio}
+              dominio={dominio.dominio} esperado={dominio.esperado}
+              verificadoEm={dominio.verificadoEm ? dominio.verificadoEm.toLocaleDateString('pt-BR') : null}
+              precoMes={brl(dominio.centavosMes)} />
+          </>
+        )}
       </div>
     </>
   );

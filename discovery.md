@@ -508,6 +508,16 @@ O custo é baixo e quase todo fixo (escrow + infra + suporte ≈ R$ 45); o víde
 
 **Margem no preço escolhido (R$ 149 + 10%):** portal médio rende R$ 468/mês contra custo de R$ 76–163; o portal pequeno — o cliente típico do lançamento — rende R$ 228 contra R$ 64–77, e sozinho cobre a escrow da conta-pai. A conta fecha até no pior caso de banda em todos os cenários.
 
+**Domínio próprio — exemplos de preço (04/09/2026, decisão em aberto).** O custo direto é quase zero: certificado gratuito (Let's Encrypt, emitido pelo Caddy sob demanda), nenhum tráfego a mais — o que pesa é o operacional (suporte a DNS mal configurado, um certificado a mais para vigiar) e o posicionamento. Referências: Hotmart e Kiwify incluem domínio próprio nas áreas de membros sem cobrar; construtores de site (Wix, Hostinger) cobram R$ 20–40/mês pelo degrau que libera domínio próprio; SaaS white-label costuma tratar como recurso do plano superior.
+
+| Exemplo | Preço | Leitura |
+|---|---|---|
+| A — "custo coberto" | **R$ 19,90/mês** no plano B | Quase incluído; quem quer, paga sem pensar. Sinaliza que o portal é dele. |
+| B — "recurso pago" (**sugerido**) | **R$ 29,90/mês** no plano B · **incluído** no plano C | ~20% da licença: valor perceptível sem virar objeção; dá ao plano C um motivo a mais de existir. |
+| C — "posicionamento" | **R$ 49/mês** no plano B · incluído no C | Empurra quem quer marca própria para o plano C (R$ 249). Só faz sentido quando o C estiver em oferta. |
+
+Qualquer um deles entra sem código: campo "Domínio próprio (R$/mês)" do plano, no admin. Enquanto estiver vazio, o painel do professor diz que o plano não inclui.
+
 #### Estado da implementação (setembro/2026)
 
 **Pronto e verificado:**
@@ -528,15 +538,23 @@ O custo é baixo e quase todo fixo (escrow + infra + suporte ≈ R$ 45); o víde
 
 - **Envio de vídeo e foto pelo painel** (`/api/upload`, `app/professor/Enviar.tsx`): o arquivo flui do navegador para o volume de mídia em stream, com barra de progresso, teto por tipo (2 GB vídeo, 5 MB imagem), extensões restritas (sem SVG), nome gerado por nós com o portal no prefixo, e a aula vinculada ao vídeo (`LOCAL`) no ato — o anterior sai do disco. Fica **fora do proxy** de propósito: no Next 16 o proxy bufferiza o corpo em memória (10 MB). Achado de infraestrutura pelo caminho: o volume `/midia` nascia do root e o processo roda como `nextjs` — o entrypoint agora prepara o volume como root e larga o privilégio (`su-exec`). Foto pública em `/api/imagem/<id>`.
 
+- **Apuração e repasse da comissão de vitrine (§5.6.1)** — `db/027_apuracao.sql`, `lib/apuracao.ts`: fechamento mensal por portal com cada venda entrando uma vez (no mês do pagamento) e cada reembolso uma vez (no mês em que ocorre, como dedução) — o `UNIQUE (pedido_id, tipo)` faz o banco garantir; abaixo de **R$ 100 acumula** (a apuração seguinte incorpora o saldo); acima, **5 dias de conferência** com contestação pelo professor, aprovação pelo admin (respondendo a contestação), **nota fiscal** informada pelo professor e **repasse só com nota**, registrado com comprovante. Prazo vencido aprova sozinho (`scripts/fechar-mes.mjs`). Telas: seção "Apurações" no financeiro do portal (admin) e "Repasse da comissão de vitrine" no painel do professor. 7 testes de integração cobrindo o ciclo inteiro. **Avanço de 04/09/2026:** (a) **repasse pelo gateway** — `Provedor.transferir` (Asaas: `POST /transfers` para a `walletId` da subconta, sem custo entre contas Asaas) e `pagarRepasse`, que exige apuração aprovada, nota e subconta aprovada, e grava o id da transferência como comprovante; o registro manual continua como alternativa; (b) **prazo do dia 15** do mês seguinte (`prazoDePagamento`), visível ao professor e ao admin (vencido fica em vermelho); (c) **extrato venda a venda** aberto nas duas telas (`ItensApuracao`). Continuam fora: dedução de taxa de gateway e impostos (ajuste de contrato) e aviso por e-mail (o sistema ainda não envia e-mail). A comissão incide sobre o **bruto** da venda (decisão da etapa 5); descontar taxa de gateway e impostos, como o §5.6.1 sugere, é ajuste de contrato, não de código.
+
+- **Adaptador do Asaas** (`lib/pagamento-asaas.ts`): cobrança Pix (cliente → cobrança com `split[].percentualValue` = 100 − nosso percentual → QR code) e cartão (página de pagamento do gateway), estorno (`/payments/{id}/refund`), subconta (`/accounts`) e Conta Escrow (`/accounts/{id}/escrow`, taxa por nossa conta), webhook autenticado pelo `asaas-access-token`, eventos `PAYMENT_CONFIRMED/RECEIVED` → confirmado, `OVERDUE/DELETED/…` → falhou, `ACCOUNT_STATUS_*` → subconta aprovada/recusada pelo status geral. Liga com `PROVEDOR_PAGAMENTO=asaas` + `ASAAS_API_KEY`, `ASAAS_AMBIENTE`, `ASAAS_WEBHOOK_TOKEN`. Escrito contra a documentação pública e testado contra uma API simulada (11 testes de mapeamento); o formato do objeto `account` nas notificações de status está marcado **"confirmar no sandbox"**. O estorno passou a ir ao gateway antes do registro no banco; o código Pix e o link de cartão passaram a ser guardados na cobrança (as telas os usam, em vez de reconstruir). Duas exigências do gateway que o produto **ainda não coleta** viraram pendências abaixo.
+
+- **CPF do aluno na compra (§12.1)** ✅ — pedido uma vez, no ato da compra, só a quem ainda não tem: campo nos dois formulários de compra (`/planos` e o curso do parceiro), validado pelos dígitos verificadores (`validarCpf`) e guardado em `usuario.cpf`; o pedido passa ao gateway como `documentoPagador`. Com o provedor simulado a compra segue sem CPF; com o Asaas, `garantirCpf` recusa antes de criar a cobrança.
+- **KYC do professor no cadastro (§8.2)** ✅ — o formulário de contratação coleta celular, renda mensal, CEP, logradouro, número, complemento e bairro (o que `/accounts` exige; cidade e UF o gateway tira do CEP). Validados em `assinarPortal`, normalizados e guardados em `portal.responsavel_telefone / responsavel_renda_centavos / responsavel_endereco` (db/028); `abrirSubconta` repassa tudo ao provedor.
+
+- **Domínio próprio (Fase 2)** ✅ — o portal responde também em `cursos.dominiodele.com.br`. Mecânica: o `proxy.ts` marca todo Host que não é nosso nem subdomínio nosso (`x-portal-dominio`, apagado se vier da rua); `portalAtual` resolve por `portal.dominio_proprio`, **só depois de verificado**. O professor cadastra o domínio no painel (Minha página), aponta o CNAME para `<mascara>.<nosso domínio>` e pede a verificação (`verificarDominio`, consulta CNAME real; DNS ainda não propagado é "ainda não", não erro). O preço mora no plano (`portal_plano.centavos_dominio_proprio`; **NULL = o plano não oferece**, e o painel diz isso) e entra na fatura como linha própria só depois de verificado. Índice único por domínio; trocar zera a verificação; o admin, ao definir pelo cadastro do portal, já vale como verificado (db/029). **Infra pendente, fora do código:** certificado HTTPS por domínio de terceiro — o curinga nosso não cobre; emitir por Caddy (on-demand TLS) ou certbot por domínio depois da verificação. **Decisão pendente:** o preço — hoje o plano de lançamento está com NULL (não oferece).
+
 **Ainda não feito:**
 
-- Apuração mensal e repasse da comissão de vitrine (§5.6.1): a comissão está gravada venda a venda e somada nos financeiros; o fechamento com NF e comprovante é o fluxo do §5.6.1, ainda por construir.
 - Transcodificação/CDN (Bunny) para o vídeo do portal — hoje o arquivo enviado é servido como está, pelo nosso volume; o adaptador CDN é o `case 'BUNNY'` de `lib/video.ts`.
-- Domínio próprio (Fase 2).
+- HTTPS para domínio próprio de terceiro (infra: Caddy on-demand TLS ou certbot por domínio).
 
 #### Fora do escopo deste modelo (por ora)
 
-Domínio próprio do professor · e-mail no domínio dele · editor livre de layout · app · múltiplos professores dentro de um mesmo portal · cupons e campanhas próprias do portal · certificado emitido pelo portal.
+E-mail no domínio do professor · editor livre de layout · app · múltiplos professores dentro de um mesmo portal · cupons e campanhas próprias do portal · certificado emitido pelo portal.
 
 #### Riscos específicos
 

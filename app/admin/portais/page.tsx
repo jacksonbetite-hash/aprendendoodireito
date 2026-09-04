@@ -156,7 +156,12 @@ export default async function Portais() {
                   {p.percentualBase}% <span className="suave">+{p.acrescimoIndicacaoPp} p.p. por indicação</span>
                 </td>
                 <td className="apertado">{p.gbArmazenamento} GB · {p.gbBandaMes} GB/mês</td>
-                <td>{brl(p.centavosPorGbExcedente)}/GB</td>
+                <td className="apertado">
+                  {brl(p.centavosPorGbExcedente)}/GB
+                  {p.centavosDominioProprio != null && (
+                    <span className="suave"> · domínio {brl(p.centavosDominioProprio)}/mês</span>
+                  )}
+                </td>
                 <td>{p.portais || <span className="suave">nenhum</span>}</td>
               </tr>
             ))}

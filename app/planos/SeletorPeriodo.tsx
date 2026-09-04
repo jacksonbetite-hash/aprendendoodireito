@@ -9,19 +9,22 @@ import type { EstadoComercial } from '../acoes-comerciais.ts';
 type Acao = (e: EstadoComercial, d: FormData) => Promise<EstadoComercial>;
 
 export default function SeletorPeriodo({
-  tabela, economiaAnual, materias, logado, temTrial, acaoComprar, acaoTrial,
+  tabela, economiaAnual, materias, logado, temTrial, precisaCpf, acaoComprar, acaoTrial,
 }: {
   tabela: Tabela;
   economiaAnual: number;
   materias: { id: number; nome: string }[];
   logado: boolean;
   temTrial: boolean;
+  /** Aluno logado sem CPF: a compra pede, uma vez (§12.1). */
+  precisaCpf: boolean;
   acaoComprar: Acao;
   acaoTrial: Acao;
 }) {
   const [periodo, setPeriodo] = useState<Periodo>('mensal');
   const [materiaId, setMateriaId] = useState(String(materias[0]?.id ?? ''));
   const [meio, setMeio] = useState<'PIX' | 'CARTAO'>('PIX');
+  const [cpf, setCpf] = useState('');
   const [estadoCompra, enviarCompra, comprando] = useActionState(acaoComprar, {});
   const [estadoTrial, enviarTrial, ativandoTrial] = useActionState(acaoTrial, {});
 
@@ -118,6 +121,7 @@ export default function SeletorPeriodo({
                     style={{ padding: '10px 12px', borderRadius: 'var(--r)', border: '2px solid var(--borda-controle)', background: 'var(--surface-container-lowest)', color: 'var(--on-surface)', fontFamily: 'inherit' }}>
               {materias.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
             </select>
+            {precisaCpf && <CampoCpf cpf={cpf} aoMudar={setCpf} />}
             <MeioDePagamento meio={meio} aoTrocar={setMeio} />
             <button className="btn btn-primario btn-bloco" type="submit" disabled={comprando || semMaterias}>
               {comprando ? 'Abrindo pedido…' : 'Assinar este curso'}
@@ -144,6 +148,7 @@ export default function SeletorPeriodo({
             <input type="hidden" name="produto" value="CATALOGO" />
             <input type="hidden" name="periodo" value={periodo} />
             <input type="hidden" name="meio" value={meio} />
+            {precisaCpf && <CampoCpf cpf={cpf} aoMudar={setCpf} />}
             <MeioDePagamento meio={meio} aoTrocar={setMeio} />
             <button className="btn btn-primario btn-bloco" type="submit" disabled={comprando}>
               {comprando ? 'Abrindo pedido…' : 'Assinar o passe'}
@@ -170,5 +175,16 @@ function MeioDePagamento(
         </button>
       ))}
     </div>
+  );
+}
+
+function CampoCpf({ cpf, aoMudar }: { cpf: string; aoMudar: (v: string) => void }) {
+  return (
+    <label className="caption suave" style={{ display: 'grid', gap: 4 }}>
+      CPF (o meio de pagamento exige)
+      <input name="cpf" type="text" inputMode="numeric" required value={cpf}
+             onChange={(e) => aoMudar(e.target.value)} placeholder="000.000.000-00" maxLength={14}
+             style={{ padding: '10px 12px', borderRadius: 'var(--r)', border: '2px solid var(--borda-controle)', background: 'var(--surface-container-lowest)', color: 'var(--on-surface)', fontFamily: 'inherit', fontSize: 14 }} />
+    </label>
   );
 }

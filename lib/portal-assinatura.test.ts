@@ -27,6 +27,9 @@ const dados = () => ({
   email: `teste-portal-${++n}@exemplo.com`,
   senha: 'senha-bem-longa',
   cnpj: CNPJ,
+  telefone: '(11) 98765-4321',
+  rendaMensalCentavos: 800000,
+  endereco: { cep: '01310-100', logradouro: 'Av. Paulista', numero: '1000', bairro: 'Bela Vista' },
   mascara: `teste-assinatura-${n}`,
   nomeExibicao: 'Portal de Teste',
   meio: 'PIX' as const,
@@ -160,4 +163,22 @@ test('no teto regulatório, a porta fecha com aviso de lista de espera', talvez,
 test.after(async () => {
   if (temBanco) await limparRastros();
   await pool.end();
+});
+
+test('KYC do responsável fica no portal, normalizado (§8.2)', talvez, async () => {
+  const r = await assinarPortal(dados());
+  const [p] = await query(
+    `SELECT responsavel_telefone AS tel, responsavel_renda_centavos AS renda,
+            responsavel_endereco AS endereco FROM portal WHERE id = $1`, [r.portalId]);
+  assert.equal(p.tel, '11987654321');
+  assert.equal(p.renda, 800000);
+  assert.deepEqual(p.endereco,
+    { cep: '01310100', logradouro: 'Av. Paulista', numero: '1000', bairro: 'Bela Vista' });
+});
+
+test('sem renda ou com CEP torto, nada é criado', talvez, async () => {
+  await assert.rejects(assinarPortal({ ...dados(), rendaMensalCentavos: 0 }), /renda/);
+  const d = dados();
+  await assert.rejects(assinarPortal({ ...d, endereco: { ...d.endereco, cep: '123' } }), /CEP/);
+  await assert.rejects(assinarPortal({ ...dados(), telefone: '123' }), /Telefone/);
 });

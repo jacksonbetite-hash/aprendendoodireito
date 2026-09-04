@@ -1,7 +1,9 @@
 import { queryOne } from './db.ts';
 import { emTransacao, auditar } from './auditoria.ts';
 import { gerarHashSenha, validarEmail, validarSenha } from './auth.ts';
-import { PORTAL_PLATAFORMA, validarCnpj } from './portal.ts';
+import { PORTAL_PLATAFORMA, validarCnpj,
+  validarTelefone, conferirEndereco, normalizarEndereco, somenteDigitos, type Endereco,
+} from './portal.ts';
 import { conferirMascara } from './admin-portais.ts';
 import {
   provedorAtual, novaReferencia,
@@ -44,6 +46,10 @@ export interface DadosAssinatura {
   senha: string;
   /** CNPJ do responsável — sem ele não há subconta (§5.10.2). */
   cnpj: string;
+  /** KYC do responsável — o gateway não abre a subconta sem (§8.2). */
+  telefone: string;
+  rendaMensalCentavos: number;
+  endereco: Endereco;
   mascara: string;
   nomeExibicao: string;
   meio: MeioPagamento;
@@ -93,7 +99,7 @@ export interface FaturaDoProfessor {
   id: number; status: string; centavosTotal: number;
   referencia: string; vencimento: Date | null; pagaEm: Date | null;
   cobrancaExternaId: string | null;
-  detalhe: { meio?: string } | null;
+  detalhe: { meio?: string; copiaECola?: string | null; linkPagamento?: string | null } | null;
   portalId: number; mascara: string; nomeExibicao: string;
   portalStatus: string; subcontaSituacao: string;
 }
@@ -130,6 +136,13 @@ export async function assinarPortal(d: DadosAssinatura): Promise<AssinaturaCriad
     throw new Error('CNPJ inválido. O portal exige pessoa jurídica — é regra do Banco '
       + 'Central para a conta de recebimento, não escolha nossa.');
   }
+  if (!validarTelefone(d.telefone)) throw new Error('Telefone inválido — DDD e número.');
+  if (!Number.isInteger(d.rendaMensalCentavos) || d.rendaMensalCentavos <= 0) {
+    throw new Error('Informe sua renda mensal — o meio de pagamento exige para abrir '
+      + 'a conta de recebimento.');
+  }
+  const erroEndereco = conferirEndereco(d.endereco);
+  if (erroEndereco) throw new Error(erroEndereco);
   if (d.meio !== 'PIX' && d.meio !== 'CARTAO') throw new Error('Meio de pagamento inválido.');
 
   // ---- teto regulatório (§5.10.2): fila de espera, não erro ----
@@ -155,6 +168,7 @@ export async function assinarPortal(d: DadosAssinatura): Promise<AssinaturaCriad
     centavos: plano.licencaMensalCentavos,
     meio: d.meio,
     emailPagador: d.email.trim().toLowerCase(),
+    documentoPagador: d.cnpj, nomePagador: d.nome.trim(),
     descricao: `Portal do Professor — 1ª mensalidade (${d.nomeExibicao.trim()})`,
   });
 
@@ -180,10 +194,14 @@ export async function assinarPortal(d: DadosAssinatura): Promise<AssinaturaCriad
     const [portal] = await exec<{ id: number }>(
       `INSERT INTO portal
          (mascara, nome_exibicao, professor_id, plano_id, status,
-          responsavel_nome, responsavel_doc, responsavel_email)
-       VALUES ($1, $2, $3, $4, 'RASCUNHO', $5, $6, lower($7)) RETURNING id::int AS id`,
+          responsavel_nome, responsavel_doc, responsavel_email,
+          responsavel_telefone, responsavel_renda_centavos, responsavel_endereco)
+       VALUES ($1, $2, $3, $4, 'RASCUNHO', $5, $6, lower($7), $8, $9, $10::jsonb)
+       RETURNING id::int AS id`,
       [mascara, d.nomeExibicao.trim(), conta.id, plano.id,
-       d.nome.trim(), d.cnpj.toUpperCase().replace(/[.\/\- ]/g, ''), d.email.trim()],
+       d.nome.trim(), d.cnpj.toUpperCase().replace(/[.\/\- ]/g, ''), d.email.trim(),
+       somenteDigitos(d.telefone), d.rendaMensalCentavos,
+       JSON.stringify(normalizarEndereco(d.endereco))],
     );
 
     // Contrato copiado do plano NO ATO (§5.10): o plano pode mudar de
@@ -207,7 +225,9 @@ export async function assinarPortal(d: DadosAssinatura): Promise<AssinaturaCriad
                'FECHADA', current_date + 2, $4, $5, $6, now())`,
       [portal.id, contrato.id, plano.licencaMensalCentavos, referencia,
        cobranca.idExterno,
-       JSON.stringify({ meio: d.meio, provedor: provedor.nome, primeiraMensalidade: true })],
+       JSON.stringify({ meio: d.meio, provedor: provedor.nome, primeiraMensalidade: true,
+                        copiaECola: cobranca.copiaECola ?? null,
+                        linkPagamento: cobranca.linkPagamento ?? null })],
     );
 
     await auditar(exec, d.email.trim().toLowerCase(), 'portal.autosservico', 'portal',

@@ -1,7 +1,7 @@
 import { query, queryOne } from './db.ts';
 import { emTransacao, auditar, type Exec } from './auditoria.ts';
 import { gerarHashSenha, validarEmail, validarSenha } from './auth.ts';
-import { PORTAL_PLATAFORMA, type StatusPortal } from './portal.ts';
+import { PORTAL_PLATAFORMA, type StatusPortal, conferirDominio } from './portal.ts';
 
 /**
  * Portais de professor na retaguarda — §5.10 e §5.10.1.
@@ -95,6 +95,8 @@ export interface PlanoPortal {
   id: number; nome: string; licencaMensalCentavos: number;
   percentualBase: string; acrescimoIndicacaoPp: string;
   gbArmazenamento: number; gbBandaMes: number; centavosPorGbExcedente: number;
+  /** Preço mensal do domínio próprio (Fase 2); null = o plano não oferece. */
+  centavosDominioProprio: number | null;
   ativo: boolean; portais: number;
 }
 
@@ -104,7 +106,8 @@ export function listarPlanos() {
             pl.percentual_base AS "percentualBase",
             pl.acrescimo_indicacao_pp AS "acrescimoIndicacaoPp",
             pl.gb_armazenamento AS "gbArmazenamento", pl.gb_banda_mes AS "gbBandaMes",
-            pl.centavos_por_gb_excedente AS "centavosPorGbExcedente", pl.ativo,
+            pl.centavos_por_gb_excedente AS "centavosPorGbExcedente",
+            pl.centavos_dominio_proprio AS "centavosDominioProprio", pl.ativo,
             (SELECT count(*)::int FROM portal p WHERE p.plano_id = pl.id) AS portais
        FROM portal_plano pl ORDER BY pl.ativo DESC, pl.nome`,
   );
@@ -114,6 +117,7 @@ export interface DadosPlano {
   nome: string; licencaMensalCentavos: number;
   percentualBase: number; acrescimoIndicacaoPp: number;
   gbArmazenamento: number; gbBandaMes: number; centavosPorGbExcedente: number;
+  centavosDominioProprio: number | null;
   ativo: boolean;
 }
 
@@ -129,6 +133,9 @@ function validarPlano(d: DadosPlano) {
     throw new Error('base + acréscimo por indicação não pode passar de 100%');
   }
   if (d.licencaMensalCentavos < 0) throw new Error('a licença mensal não pode ser negativa');
+  if (d.centavosDominioProprio !== null && d.centavosDominioProprio < 0) {
+    throw new Error('o preço do domínio próprio não pode ser negativo');
+  }
 }
 
 export async function salvarPlano(ator: string, id: number | null, d: DadosPlano) {
@@ -141,10 +148,10 @@ export async function salvarPlano(ator: string, id: number | null, d: DadosPlano
       const [linha] = await exec<{ id: number }>(
         `UPDATE portal_plano SET nome=$2, licenca_mensal_centavos=$3, percentual_base=$4,
                 acrescimo_indicacao_pp=$5, gb_armazenamento=$6, gb_banda_mes=$7,
-                centavos_por_gb_excedente=$8, ativo=$9
+                centavos_por_gb_excedente=$8, ativo=$9, centavos_dominio_proprio=$10
           WHERE id = $1 RETURNING id`,
         [id, d.nome.trim(), d.licencaMensalCentavos, d.percentualBase, d.acrescimoIndicacaoPp,
-         d.gbArmazenamento, d.gbBandaMes, d.centavosPorGbExcedente, d.ativo],
+         d.gbArmazenamento, d.gbBandaMes, d.centavosPorGbExcedente, d.ativo, d.centavosDominioProprio],
       );
       if (!linha) throw new Error('plano não encontrado');
       await auditar(exec, ator, 'portal_plano.editado', 'portal_plano', id, { nome: d.nome });
@@ -153,10 +160,10 @@ export async function salvarPlano(ator: string, id: number | null, d: DadosPlano
     const [novo] = await exec<{ id: number }>(
       `INSERT INTO portal_plano
         (nome, licenca_mensal_centavos, percentual_base, acrescimo_indicacao_pp,
-         gb_armazenamento, gb_banda_mes, centavos_por_gb_excedente, ativo)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+         gb_armazenamento, gb_banda_mes, centavos_por_gb_excedente, ativo, centavos_dominio_proprio)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
       [d.nome.trim(), d.licencaMensalCentavos, d.percentualBase, d.acrescimoIndicacaoPp,
-       d.gbArmazenamento, d.gbBandaMes, d.centavosPorGbExcedente, d.ativo],
+       d.gbArmazenamento, d.gbBandaMes, d.centavosPorGbExcedente, d.ativo, d.centavosDominioProprio],
     );
     await auditar(exec, ator, 'portal_plano.criado', 'portal_plano', novo.id, { nome: d.nome });
     return novo.id;
@@ -309,6 +316,11 @@ export async function editarPortal(
     // sem identificação, o que o §5.10 e o CDC não permitem.
     const temResponsavel = 'responsavelNome' in d || 'responsavelDoc' in d || 'responsavelEmail' in d;
     const temDominio = 'dominioProprio' in d;
+    const dominio = d.dominioProprio?.trim().toLowerCase() || null;
+    if (temDominio && dominio) {
+      const erro = conferirDominio(dominio);
+      if (erro) throw new Error(erro);
+    }
     await exec(
       `UPDATE portal SET
          mascara = $2,
@@ -319,11 +331,14 @@ export async function editarPortal(
          responsavel_doc   = CASE WHEN $11::boolean THEN $7 ELSE responsavel_doc   END,
          responsavel_email = CASE WHEN $11::boolean THEN $8 ELSE responsavel_email END,
          dominio_proprio   = CASE WHEN $12::boolean THEN $9 ELSE dominio_proprio   END,
+         dominio_verificado_em = CASE
+           WHEN NOT $12::boolean OR $9 IS NOT DISTINCT FROM dominio_proprio THEN dominio_verificado_em
+           WHEN $9 IS NULL THEN NULL ELSE now() END,
          personalizacao = coalesce($10::jsonb, personalizacao)
        WHERE id = $1`,
       [id, mascara, d.nomeExibicao?.trim() || null, d.professorId ?? null, d.planoId ?? null,
        d.responsavelNome?.trim() || null, d.responsavelDoc?.trim() || null,
-       d.responsavelEmail?.trim() || null, d.dominioProprio?.trim() || null,
+       d.responsavelEmail?.trim() || null, dominio,
        d.personalizacao ? JSON.stringify(d.personalizacao) : null,
        temResponsavel, temDominio],
     );

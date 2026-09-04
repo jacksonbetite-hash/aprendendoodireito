@@ -1,8 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { FormFechar } from '../FormsFinanceiro.tsx';
-import { acaoFecharFatura, acaoMedirConsumo } from '../../acoes.ts';
+import { FormFechar, FormApurar, FormApuracaoAdmin } from '../FormsFinanceiro.tsx';
+import {
+  acaoFecharFatura, acaoMedirConsumo, acaoApurar, acaoAprovarApuracao, acaoRegistrarRepasse, acaoPagarRepasse,
+} from '../../acoes.ts';
+import { listarApuracoes, itensDaApuracao, prazoDePagamento } from '../../../../../lib/apuracao.ts';
+import ItensApuracao from '../../../../professor/ItensApuracao.tsx';
 import { buscarPortal, historicoDeContratos } from '../../../../../lib/admin-portais.ts';
 import {
   consumoDaCompetencia, extratoDoPortal, totaisDoExtrato, listarFaturas, vendasNaVitrine,
@@ -37,11 +41,12 @@ export default async function FinanceiroDoPortal({ params }: { params: Promise<{
 
   const hoje = new Date();
   const atual = competenciaDe(hoje);
-  const [portal, contratos, planos, consumo, extrato, totais, faturas, vitrine] = await Promise.all([
+  const [portal, contratos, planos, consumo, extrato, totais, faturas, vitrine, apuracoes] = await Promise.all([
     buscarPortal(portalId), historicoDeContratos(portalId), listarPlanos(),
     consumoDaCompetencia(portalId, atual), extratoDoPortal(portalId), totaisDoExtrato(portalId),
-    listarFaturas(portalId), vendasNaVitrine(portalId),
+    listarFaturas(portalId), vendasNaVitrine(portalId), listarApuracoes(portalId),
   ]);
+  const itens = new Map(await Promise.all(apuracoes.map(async (a) => [a.id, await itensDaApuracao(a.id)] as const)));
   const comissaoTotal = vitrine.filter((v) => v.status === 'PAGO').reduce((t, v) => t + v.aReceber, 0);
   if (!portal) notFound();
 
@@ -183,6 +188,43 @@ export default async function FinanceiroDoPortal({ params }: { params: Promise<{
             {vitrine.length === 0 && <tr><td colSpan={7} className="suave">Nenhuma venda na vitrine ainda.</td></tr>}
           </tbody>
         </table>
+
+        <h3 className="headline-md" style={{ margin: '24px 0 6px' }}>Apurações (§5.6.1)</h3>
+        <p className="suave" style={{ marginBottom: 12 }}>
+          Fechamento mensal da comissão: conferência de 5 dias, nota fiscal do professor, repasse com comprovante.
+        </p>
+        <table className="tabela" style={{ marginBottom: 16 }}>
+          <thead><tr><th>Competência</th><th>Vendas</th><th>Reembolsos</th><th>Saldo ant.</th><th>Comissão</th><th>Situação</th><th>Nota</th><th>Ações</th></tr></thead>
+          <tbody>
+            {apuracoes.map((a) => (
+              <tr key={a.id}>
+                <td>{MES(a.competencia)}</td>
+                <td className="apertado">{brl(a.centavosVendas)}</td>
+                <td className="apertado">{brl(a.centavosReembolsos)}</td>
+                <td className="apertado">{brl(a.centavosSaldoAnterior)}</td>
+                <td className="apertado"><strong>{brl(a.centavosComissao)}</strong></td>
+                <td>
+                  <span className={`chip chip-sm ${a.status === 'PAGA' ? 'chip-secundaria' : a.status === 'CONTESTADA' ? 'chip-erro' : 'chip-neutra'}`}>
+                    {a.status.toLowerCase().replace('_', ' ')}
+                  </span>
+                  {a.status === 'EM_CONFERENCIA' && <><br /><span className="caption suave">contesta até {DATA(a.prazoContestacao)}</span></>}
+                  {a.status === 'APROVADA' && <><br /><span className={`caption ${prazoDePagamento(a.competencia) < hoje ? 'chip-erro' : 'suave'}`}>pagar até {DATA(prazoDePagamento(a.competencia))}</span></>}
+                  {a.contestacao && <><br /><span className="caption">“{a.contestacao}”</span></>}
+                </td>
+                <td className="mono">{a.nfNumero ?? '—'}</td>
+                <td>
+                  <FormApuracaoAdmin aprovar={acaoAprovarApuracao} pagar={acaoRegistrarRepasse} pagarGateway={acaoPagarRepasse}
+                    portalId={portalId} apuracaoId={a.id} status={a.status} contestacao={a.contestacao} temNota={Boolean(a.nfNumero)} />
+                </td>
+              </tr>
+            ))}
+            {apuracoes.map((a) => (
+              <tr key={`itens-${a.id}`}><td colSpan={8} style={{ paddingTop: 0 }}><ItensApuracao itens={itens.get(a.id) ?? []} /></td></tr>
+            ))}
+            {apuracoes.length === 0 && <tr><td colSpan={8} className="suave">Nenhuma competência apurada ainda.</td></tr>}
+          </tbody>
+        </table>
+        <FormApurar acao={acaoApurar} portalId={portalId} competenciaSugerida={competenciaAnterior(hoje)} />
       </div>
     </>
   );

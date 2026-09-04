@@ -6,6 +6,7 @@ import { economia, brl } from '../../lib/precos.ts';
 import { tabelaVigente } from '../../lib/precos-consultas.ts';
 import { listarMateriasEmCache } from '../../lib/catalogo.ts';
 import { alunoAtual, licencasDo } from '../../lib/sessao.ts';
+import { temCpf } from '../../lib/checkout.ts';
 import { acaoComprar, acaoAtivarTrial } from '../acoes-comerciais.ts';
 import { portalIdAtual } from '../../lib/portal-consultas.ts';
 import { planoDeLancamento } from '../../lib/portal-assinatura.ts';
@@ -30,6 +31,7 @@ export default async function Planos() {
     .filter((m) => m.status === 'publicado' && m.aulasPublicadas > 0)
     .map((m) => ({ id: m.id, nome: m.nome }));
   const licencas = aluno ? await licencasDo(aluno.id) : [];
+  const precisaCpf = aluno ? !(await temCpf(aluno.id)) : false;
   const temTrial = licencas.some((l) => l.origem === 'TRIAL');
   return (
     <Pagina ativo="planos">
@@ -51,6 +53,7 @@ export default async function Planos() {
             economiaAnual={economia(tabela, 'CATALOGO', 'anual')}
             materias={publicadas}
             logado={Boolean(aluno)}
+            precisaCpf={precisaCpf}
             temTrial={temTrial}
             acaoComprar={acaoComprar}
             acaoTrial={acaoAtivarTrial}

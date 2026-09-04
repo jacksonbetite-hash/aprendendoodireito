@@ -16,6 +16,59 @@ import {
 } from '../../../lib/portal-financeiro.ts';
 import { concederLicenca } from '../../../lib/admin.ts';
 import { brl } from '../../../lib/precos.ts';
+import { apurarComissao, aprovarApuracao, registrarRepasse, pagarRepasse } from '../../../lib/apuracao.ts';
+
+// ---------- Apuração da comissão de vitrine (§5.6.1) ----------
+
+export async function acaoApurar(_e: EstadoAdmin, dados: FormData): Promise<EstadoAdmin> {
+  const u = await admin();
+  const portalId = numero(dados.get('portalId'));
+  const mes = String(dados.get('mes') ?? '');
+  const competencia = /^\d{4}-\d{2}$/.test(mes) ? `${mes}-01` : mes;
+  try {
+    const r = await apurarComissao(u.email, portalId, competencia);
+    revalidatePath(`/admin/portais/${portalId}/financeiro`);
+    return { ok: `Competência apurada: ${r.vendas} venda(s), ${r.reembolsos} reembolso(s), comissão ${brl(r.centavosComissao)} — ${r.status.toLowerCase().replace('_', ' ')}.` };
+  } catch (err) {
+    return { erro: (err as Error).message };
+  }
+}
+
+export async function acaoAprovarApuracao(_e: EstadoAdmin, dados: FormData): Promise<EstadoAdmin> {
+  const u = await admin();
+  const portalId = numero(dados.get('portalId'));
+  try {
+    await aprovarApuracao(u.email, numero(dados.get('apuracaoId')), String(dados.get('resposta') ?? ''));
+    revalidatePath(`/admin/portais/${portalId}/financeiro`);
+    return { ok: 'Apuração aprovada. O professor pode emitir a nota.' };
+  } catch (err) {
+    return { erro: (err as Error).message };
+  }
+}
+
+export async function acaoRegistrarRepasse(_e: EstadoAdmin, dados: FormData): Promise<EstadoAdmin> {
+  const u = await admin();
+  const portalId = numero(dados.get('portalId'));
+  try {
+    await registrarRepasse(u.email, numero(dados.get('apuracaoId')), String(dados.get('comprovante') ?? ''));
+    revalidatePath(`/admin/portais/${portalId}/financeiro`);
+    return { ok: 'Repasse registrado. Apuração paga.' };
+  } catch (err) {
+    return { erro: (err as Error).message };
+  }
+}
+
+export async function acaoPagarRepasse(_e: EstadoAdmin, dados: FormData): Promise<EstadoAdmin> {
+  const u = await admin();
+  const portalId = numero(dados.get('portalId'));
+  try {
+    const r = await pagarRepasse(u.email, numero(dados.get('apuracaoId')));
+    revalidatePath(`/admin/portais/${portalId}/financeiro`);
+    return { ok: `Transferência enviada (${r.comprovante}). Apuração paga.` };
+  } catch (err) {
+    return { erro: (err as Error).message };
+  }
+}
 
 async function admin() {
   const u = await exigirAdmin();
@@ -65,6 +118,9 @@ function lerPlano(dados: FormData): DadosPlano {
     gbArmazenamento: Math.trunc(numero(dados.get('gbArmazenamento'))),
     gbBandaMes: Math.trunc(numero(dados.get('gbBandaMes'))),
     centavosPorGbExcedente: centavos(dados.get('porGbExcedente')),
+    // vazio = o plano não oferece domínio próprio (Fase 2)
+    centavosDominioProprio: String(dados.get('dominioProprio') ?? '').trim()
+      ? centavos(dados.get('dominioProprio')) : null,
     ativo: dados.get('ativo') === 'on',
   };
 }

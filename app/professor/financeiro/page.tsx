@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { acaoMedirMeuConsumo } from '../acoes.ts';
+import { acaoMedirMeuConsumo, acaoContestar, acaoInformarNota } from '../acoes.ts';
+import FormsApuracao from '../FormsApuracao.tsx';
+import ItensApuracao from '../ItensApuracao.tsx';
+import { listarApuracoes, itensDaApuracao, prazoDePagamento } from '../../../lib/apuracao.ts';
 import { alunoAtual } from '../../../lib/sessao.ts';
 import { portalDoProfessor } from '../../../lib/professor.ts';
 import {
@@ -28,10 +31,11 @@ export default async function FinanceiroDoProfessor() {
   const u = (await alunoAtual())!;
   const portal = (await portalDoProfessor(u.id))!;
   const atual = competenciaDe(new Date());
-  const [consumo, extrato, totais, faturas, vitrine, planos] = await Promise.all([
+  const [consumo, extrato, totais, faturas, vitrine, planos, apuracoes] = await Promise.all([
     consumoDaCompetencia(portal.id, atual), extratoDoPortal(portal.id), totaisDoExtrato(portal.id),
-    listarFaturas(portal.id), vendasNaVitrine(portal.id), listarPlanos(),
+    listarFaturas(portal.id), vendasNaVitrine(portal.id), listarPlanos(), listarApuracoes(portal.id),
   ]);
+  const itens = new Map(await Promise.all(apuracoes.map(async (a) => [a.id, await itensDaApuracao(a.id)] as const)));
   const plano = planos.find((p) => p.nome === portal.planoNome);
   const excedente = plano ? calcularExcedente(consumo.bytesArmazenados, consumo.bytesTrafegados, plano) : null;
   const comissaoVitrine = vitrine.filter((v) => v.status === 'PAGO').reduce((t, v) => t + v.aReceber, 0);
@@ -127,6 +131,45 @@ export default async function FinanceiroDoProfessor() {
           </tbody>
         </table>
       </div>
+
+      {apuracoes.length > 0 && (
+        <div className="cartao" style={{ marginBottom: 24 }}>
+          <h2 className="headline-md" style={{ marginBottom: 6 }}>Repasse da comissão de vitrine</h2>
+          <p className="suave" style={{ marginBottom: 16 }}>
+            Fechado mês a mês. Você tem 5 dias para contestar o extrato; aprovado, emite a nota no
+            valor e a plataforma paga até o dia 15. Abaixo de R$ 100, o saldo acumula para o mês seguinte.
+          </p>
+          <table className="tabela">
+            <thead><tr><th>Competência</th><th>Vendas</th><th>Reembolsos</th><th>Saldo ant.</th><th>Comissão</th><th>Situação</th><th>Ações</th></tr></thead>
+            <tbody>
+              {apuracoes.map((a) => (
+                <tr key={a.id}>
+                  <td>{MES(a.competencia)}</td>
+                  <td className="apertado">{brl(a.centavosVendas)}</td>
+                  <td className="apertado">{brl(a.centavosReembolsos)}</td>
+                  <td className="apertado">{brl(a.centavosSaldoAnterior)}</td>
+                  <td className="apertado"><strong>{brl(a.centavosComissao)}</strong></td>
+                  <td>
+                    <span className={`chip chip-sm ${a.status === 'PAGA' ? 'chip-secundaria' : a.status === 'CONTESTADA' ? 'chip-erro' : 'chip-neutra'}`}>
+                      {a.status.toLowerCase().replace('_', ' ')}
+                    </span>
+                    {a.status === 'EM_CONFERENCIA' && <><br /><span className="caption suave">conteste até {DATA(a.prazoContestacao)}</span></>}
+                    {a.status === 'APROVADA' && <><br /><span className="caption suave">{a.nfNumero ? `NF ${a.nfNumero} · ` : 'emita a nota · '}pagamento até {DATA(prazoDePagamento(a.competencia))}</span></>}
+                    {a.resposta && <><br /><span className="caption">resposta: {a.resposta}</span></>}
+                    {a.status === 'PAGA' && <><br /><span className="caption suave">NF {a.nfNumero} · pago em {DATA(a.pagaEm)} · {a.comprovante}</span></>}
+                  </td>
+                  <td>
+                    <FormsApuracao contestar={acaoContestar} informarNota={acaoInformarNota} apuracaoId={a.id} status={a.status} />
+                  </td>
+                </tr>
+              ))}
+              {apuracoes.map((a) => (
+                <tr key={`itens-${a.id}`}><td colSpan={7} style={{ paddingTop: 0 }}><ItensApuracao itens={itens.get(a.id) ?? []} /></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {vitrine.length > 0 && (
         <div className="cartao">

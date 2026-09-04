@@ -32,8 +32,10 @@ export default async function PagamentoPortal(
   const paga = fatura.status === 'PAGA';
   const endereco = `${fatura.mascara}.${dominioBase()}`;
   const copiaECola = fatura.detalhe?.meio === 'PIX' && !paga
-    ? `00020126580014BR.GOV.BCB.PIX0136${fatura.cobrancaExternaId ?? referencia}5204000053039865802BR5916APRIMORE O SABER6009SAO PAULO62070503***6304`
+    ? (fatura.detalhe.copiaECola
+       ?? `00020126580014BR.GOV.BCB.PIX0136${fatura.cobrancaExternaId ?? referencia}5204000053039865802BR5916APRIMORE O SABER6009SAO PAULO62070503***6304`)
     : null;
+  const linkPagamento = fatura.detalhe?.linkPagamento ?? null;
 
   return (
     <Pagina>
@@ -114,6 +116,11 @@ export default async function PagamentoPortal(
                     Os dados do cartão são capturados pelo gateway, nunca pelo nosso
                     servidor (PCI-DSS SAQ-A). A mensalidade renova sozinha.
                   </p>
+                  {linkPagamento && (
+                    <a className="btn btn-primario btn-bloco" href={linkPagamento} target="_blank" rel="noreferrer">
+                      Pagar com cartão na página segura
+                    </a>
+                  )}
                 </>
               )}
 

@@ -1,5 +1,6 @@
 import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import type { Periodo, Produto } from './precos.ts';
+import { asaasDoAmbiente } from './pagamento-asaas.ts';
 
 /**
  * Camada de pagamento — §8 do discovery.
@@ -23,6 +24,14 @@ export interface Cobranca {
   descricao: string;
   emailPagador: string;
   /**
+   * CPF/CNPJ e nome do pagador. O gateway real exige o documento para
+   * criar o cliente da cobrança (§12.1: CPF pedido na compra); o simulado
+   * dispensa. Opcional aqui, obrigatório lá — e o adaptador diz isso com
+   * uma mensagem para o aluno, não com um 400 genérico.
+   */
+  documentoPagador?: string | null;
+  nomePagador?: string | null;
+  /**
    * Venda de portal (§5.10): divide na liquidação. `percentualRetido` é a
    * NOSSA parte; o resto vai para a `walletId` do professor. Como cada
    * gateway expressa isso é problema do adaptador — no Asaas, por
@@ -39,6 +48,8 @@ export interface CobrancaCriada {
   /** Instrução para o aluno, mostrada na tela. */
   instrucao: string;
   expiraEm: Date;
+  /** Página de pagamento hospedada pelo gateway (cartão), quando houver. */
+  linkPagamento?: string;
 }
 
 export interface EventoPagamento {
@@ -56,6 +67,14 @@ export interface DadosSubconta {
   email: string;
   /** CNPJ sem pontuação — subconta de pessoa física não existe (§8.2). */
   cnpj: string;
+  /**
+   * KYC que o gateway real exige para abrir a subconta. O simulado não
+   * usa; o Asaas recusa sem eles — e diz o que falta.
+   */
+  telefone?: string | null;
+  rendaMensalCentavos?: number | null;
+  tipoEmpresa?: 'MEI' | 'LIMITED' | 'INDIVIDUAL' | 'ASSOCIATION';
+  endereco?: { cep: string; logradouro: string; numero: string; bairro: string; complemento?: string } | null;
 }
 
 export interface SubcontaCriada {
@@ -65,11 +84,23 @@ export interface SubcontaCriada {
   walletId: string;
 }
 
+/** Repasse da comissão de vitrine (§5.6.1): dinheiro NOSSO indo para a conta do professor. */
+export interface Transferencia {
+  /** Carteira da subconta do professor no gateway. */
+  walletId: string;
+  centavos: number;
+  descricao: string;
+  /** Identificador nosso (apuração) — idempotência e conciliação. */
+  referencia: string;
+}
+
 export interface Provedor {
   nome: string;
   /** Se false, a interface avisa que nenhuma cobrança real acontece. */
   cobraDeVerdade: boolean;
   criarCobranca(c: Cobranca): Promise<CobrancaCriada>;
+  /** Devolve o dinheiro ao pagador (§6.6). Falhou no gateway, não se registra o reembolso. */
+  reembolsar(idExterno: string, centavos: number): Promise<void>;
   /**
    * Abre a subconta do professor. A criação devolve os identificadores na
    * hora, mas a APROVAÇÃO é assíncrona — chega por webhook
@@ -82,6 +113,12 @@ export interface Provedor {
    * cobre o reembolso de 7 dias do CDC num modelo com split.
    */
   habilitarEscrow(subcontaId: string, diasRetencao: number): Promise<void>;
+  /**
+   * Transfere da nossa conta para a subconta do professor — o repasse da
+   * apuração (§5.6.1). Devolve o identificador no gateway, que vira o
+   * comprovante.
+   */
+  transferir(t: Transferencia): Promise<{ idExterno: string }>;
   /** Valida a assinatura do webhook. Sem isso, qualquer um libera licença. */
   validarAssinatura(corpo: string, cabecalho: string | null): boolean;
   interpretarEvento(corpo: unknown): EventoPagamento | null;
@@ -138,6 +175,11 @@ export const simulado: Provedor = {
     };
   },
 
+  async reembolsar() {
+    // Nenhuma cobrança real, nenhum estorno real. O registro no banco é
+    // o mesmo de produção (lib/checkout.ts).
+  },
+
   /**
    * Subconta simulada: identificadores locais, aprovação pendente. A
    * aprovação vem pelo webhook (`scripts/aprovar-subconta.mjs` faz o
@@ -147,6 +189,12 @@ export const simulado: Provedor = {
     if (!d.cnpj) throw new Error('subconta exige CNPJ');
     const sufixo = randomBytes(9).toString('hex');
     return { idExterno: 'sub_' + sufixo, walletId: 'wal_' + sufixo };
+  },
+
+  async transferir(t) {
+    if (!t.walletId) throw new Error('transferência exige a carteira do professor');
+    if (t.centavos <= 0) throw new Error('transferência exige valor positivo');
+    return { idExterno: 'trf_' + randomBytes(9).toString('hex') };
   },
 
   async habilitarEscrow() {
@@ -180,13 +228,18 @@ export function provedorAtual(): Provedor {
     case undefined:
     case '':
       return simulado;
+    case 'asaas':
+      // lib/pagamento-asaas.ts importa só tipos daqui: sem ciclo em tempo
+      // de execução. Uma instância por processo é suficiente.
+      return (asaasCache ??= asaasDoAmbiente());
     default:
       throw new Error(
         `Provedor de pagamento "${process.env.PROVEDOR_PAGAMENTO}" não implementado. ` +
-        'Provedores disponíveis: simulado.',
+        'Provedores disponíveis: simulado, asaas.',
       );
   }
 }
+let asaasCache: Provedor | undefined;
 
 /**
  * Referência da cobrança, curta e legível para o suporte. O prefixo diz

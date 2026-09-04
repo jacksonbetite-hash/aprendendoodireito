@@ -38,6 +38,9 @@ services:
       NODE_ENV: production
       PROVEDOR_PAGAMENTO: ${PROVEDOR_PAGAMENTO:-simulado}
       WEBHOOK_SEGREDO: ${WEBHOOK_SEGREDO:-segredo-de-desenvolvimento}
+      ASAAS_AMBIENTE: ${ASAAS_AMBIENTE:-sandbox}
+      ASAAS_API_KEY: ${ASAAS_API_KEY:-}
+      ASAAS_WEBHOOK_TOKEN: ${ASAAS_WEBHOOK_TOKEN:-}
       ALUNO_DEMO: ${ALUNO_DEMO:-}
       # §5.10 — domínio sob o qual os portais de professor vivem.
       # `jackson.<DOMINIO_BASE>` resolve o portal do Jackson; o domínio

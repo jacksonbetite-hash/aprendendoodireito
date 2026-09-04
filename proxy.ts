@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import {
-  CABECALHO_PORTAL, CABECALHO_HOST_EXTERNO, CABECALHO_PROTO_EXTERNO,
-  COOKIE_INDICACAO, mascaraDoHost,
+  CABECALHO_PORTAL, CABECALHO_DOMINIO, CABECALHO_HOST_EXTERNO, CABECALHO_PROTO_EXTERNO,
+  COOKIE_INDICACAO, mascaraDoHost, dominioProprioDoHost,
 } from './lib/portal.ts';
 
 /**
@@ -28,12 +28,19 @@ export function proxy(request: NextRequest) {
 
   // Nunca confiar no que veio da rua: só o que escrevemos aqui vale.
   cabecalhos.delete(CABECALHO_PORTAL);
+  cabecalhos.delete(CABECALHO_DOMINIO);
   cabecalhos.delete(CABECALHO_HOST_EXTERNO);
   cabecalhos.delete(CABECALHO_PROTO_EXTERNO);
 
   const host = request.headers.get('host');
   const mascara = mascaraDoHost(host);
   if (mascara) cabecalhos.set(CABECALHO_PORTAL, mascara);
+  // Host que não é nosso: domínio próprio de professor (Fase 2). A
+  // aplicação decide se ele pertence a um portal verificado.
+  if (!mascara) {
+    const dominio = dominioProprioDoHost(host);
+    if (dominio) cabecalhos.set(CABECALHO_DOMINIO, dominio);
+  }
 
   // O endereço externo, para quem precisar montar URL de volta para o
   // navegador (o link rastreado /ir, por exemplo): daqui em diante a

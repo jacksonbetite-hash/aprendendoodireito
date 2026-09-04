@@ -231,11 +231,16 @@ export async function fecharFatura(
   const base = await queryOne<{
     licenca: number; gbArmazenamento: number; gbBandaMes: number; centavosPorGbExcedente: number;
     contratoId: number; email: string | null; nome: string; status: string;
+    documento: string | null; nomeResponsavel: string | null;
+    dominio: string | null; dominioVerificadoEm: Date | null; centavosDominio: number | null;
   }>(
     `SELECT c.id AS "contratoId", c.licenca_mensal_centavos AS licenca,
             pl.gb_armazenamento AS "gbArmazenamento", pl.gb_banda_mes AS "gbBandaMes",
             pl.centavos_por_gb_excedente AS "centavosPorGbExcedente",
-            p.responsavel_email AS email, p.nome_exibicao AS nome, p.status
+            p.responsavel_email AS email, p.nome_exibicao AS nome, p.status,
+            p.responsavel_doc AS documento, p.responsavel_nome AS "nomeResponsavel",
+            p.dominio_proprio AS dominio, p.dominio_verificado_em AS "dominioVerificadoEm",
+            pl.centavos_dominio_proprio AS "centavosDominio"
        FROM portal p
        JOIN portal_contrato c ON c.portal_id = p.id AND c.vigente_ate IS NULL AND c.aceito_em IS NOT NULL
        JOIN portal_plano pl ON pl.id = c.plano_id
@@ -248,6 +253,12 @@ export async function fecharFatura(
   const existente = await queryOne<{ id: number }>(
     `SELECT id FROM portal_fatura WHERE portal_id = $1 AND competencia = $2`, [portalId, competencia]);
   if (existente) throw new Error(`a competência ${competencia.slice(0, 7)} já está fechada`);
+
+  // Domínio próprio (Fase 2): linha da fatura só depois de VERIFICADO —
+  // cobrar por um domínio que ainda não responde seria cobrar por nada.
+  if (base.dominio && base.dominioVerificadoEm && base.centavosDominio) {
+    ajustes = [...ajustes, { centavos: base.centavosDominio, motivo: `Domínio próprio (${base.dominio})` }];
+  }
 
   const consumo = await consumoDaCompetencia(portalId, competencia);
   const excedente = calcularExcedente(consumo.bytesArmazenados, consumo.bytesTrafegados, base);
@@ -281,6 +292,7 @@ export async function fecharFatura(
   const cobranca = await provedor.criarCobranca({
     referencia, centavos: total, meio,
     emailPagador: base.email ?? '',
+    documentoPagador: base.documento, nomePagador: base.nomeResponsavel ?? base.nome,
     descricao: `Portal do Professor — ${competencia.slice(0, 7)} (${base.nome})`,
   });
 
@@ -294,7 +306,9 @@ export async function fecharFatura(
        RETURNING id`,
       [portalId, base.contratoId, competencia, base.licenca, excedente.centavos,
        centavosAjustes, total, referencia, cobranca.idExterno,
-       JSON.stringify({ ...detalhe, provedor: provedor.nome })],
+       JSON.stringify({ ...detalhe, provedor: provedor.nome,
+                        copiaECola: cobranca.copiaECola ?? null,
+                        linkPagamento: cobranca.linkPagamento ?? null })],
     );
     await auditar(exec, ator, 'portal_fatura.fechada', 'portal_fatura', f.id,
       { portalId, competencia, licenca: base.licenca, excedente: excedente.centavos,

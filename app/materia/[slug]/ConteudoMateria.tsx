@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Pagina, Icone, portalSuspenso, PortalSuspenso } from '../../componentes.tsx';
 import ComprarParceiro from '../../parceiros/ComprarParceiro.tsx';
 import { acaoComprar } from '../../acoes-comerciais.ts';
+import { temCpf } from '../../../lib/checkout.ts';
 import {
   buscarMateria, listarAulasDaMateria, formatarDuracao,
 } from '../../../lib/catalogo.ts';
@@ -219,7 +220,8 @@ export default async function ConteudoMateria(
           </p>
           {parceiro ? (
             <ComprarParceiro acao={acaoComprar} materiaId={materia.id} tabela={tabela}
-                             logado={Boolean(aluno)} vende={parceiro.vende} />
+                             logado={Boolean(aluno)} vende={parceiro.vende}
+                             precisaCpf={aluno ? !(await temCpf(aluno.id)) : false} />
           ) : (
             <div className="pilha-sm" style={{ marginTop: 20 }}>
               <Link className="btn btn-primario btn-bloco" href="/planos">Assinar este curso</Link>

@@ -14,6 +14,8 @@
 
 /** Onde a máscara viaja entre o proxy e a aplicação. */
 export const CABECALHO_PORTAL = 'x-portal-mascara';
+/** Domínio próprio do portal (Fase 2), quando o Host não é subdomínio nosso. */
+export const CABECALHO_DOMINIO = 'x-portal-dominio';
 
 /**
  * O endereço EXTERNO da requisição (host:porta e protocolo como o
@@ -111,6 +113,80 @@ export function validarCnpj(bruto: string): boolean {
   const pesos2 = [6, ...pesos1];
   return dv(s.slice(0, 12), pesos1) === Number(s[12])
       && dv(s.slice(0, 13), pesos2) === Number(s[13]);
+}
+
+/** Só os dígitos — CPF, CEP e telefone chegam do formulário com pontuação. */
+export function somenteDigitos(bruto: string): string {
+  return bruto.replace(/\D/g, '');
+}
+
+/** CPF pelos dois dígitos verificadores (módulo 11). */
+export function validarCpf(bruto: string): boolean {
+  const s = somenteDigitos(bruto);
+  if (s.length !== 11 || /^(\d)\1{10}$/.test(s)) return false;
+  const dv = (tamanho: number) => {
+    const soma = [...s.slice(0, tamanho)].reduce((t, c, i) => t + Number(c) * (tamanho + 1 - i), 0);
+    const resto = (soma * 10) % 11;
+    return resto === 10 ? 0 : resto;
+  };
+  return dv(9) === Number(s[9]) && dv(10) === Number(s[10]);
+}
+
+/** Telefone brasileiro: DDD válido + 8 ou 9 dígitos. */
+export function validarTelefone(bruto: string): boolean {
+  const s = somenteDigitos(bruto);
+  return (s.length === 10 || s.length === 11) && /^[1-9][1-9]/.test(s);
+}
+
+export function validarCep(bruto: string): boolean {
+  return /^\d{8}$/.test(somenteDigitos(bruto));
+}
+
+/** Endereço do responsável — o que o gateway exige para abrir a subconta (§8.2). */
+export interface Endereco {
+  cep: string; logradouro: string; numero: string; bairro: string; complemento?: string;
+}
+
+/** Mensagem de erro, ou null se o endereço serve para o KYC. */
+export function conferirEndereco(e: Endereco): string | null {
+  if (!validarCep(e.cep)) return 'CEP inválido — são 8 dígitos.';
+  if (!e.logradouro.trim()) return 'Informe o logradouro (rua, avenida…).';
+  if (!e.numero.trim()) return 'Informe o número do endereço (ou "s/n").';
+  if (!e.bairro.trim()) return 'Informe o bairro.';
+  return null;
+}
+
+export function normalizarEndereco(e: Endereco): Endereco {
+  const complemento = (e.complemento ?? '').trim();
+  return {
+    cep: somenteDigitos(e.cep), logradouro: e.logradouro.trim(), numero: e.numero.trim(),
+    bairro: e.bairro.trim(), ...(complemento ? { complemento } : {}),
+  };
+}
+
+const RE_DOMINIO = /^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+
+/**
+ * O Host quando NÃO é o nosso domínio nem subdomínio dele: um domínio
+ * próprio de professor (Fase 2). Devolve o host limpo ou null. Quem diz
+ * se ele pertence a algum portal é o banco (`buscarPortalPorDominio`).
+ */
+export function dominioProprioDoHost(host: string | null, base = dominioBase()): string | null {
+  if (!host) return null;
+  const limpo = host.split(',')[0].trim().toLowerCase().replace(/:\d+$/, '');
+  if (limpo === base || limpo === `www.${base}` || limpo.endsWith(`.${base}`)) return null;
+  if (limpo === 'localhost' || /^[\d.]+$/.test(limpo) || limpo.startsWith('[')) return null;
+  return RE_DOMINIO.test(limpo) ? limpo : null;
+}
+
+/** Mensagem de erro, ou null se o domínio informado serve como domínio próprio. */
+export function conferirDominio(bruto: string, base = dominioBase()): string | null {
+  const d = bruto.trim().toLowerCase();
+  if (!d) return 'Informe o domínio.';
+  if (/^[a-z]+:\/\//.test(d) || d.includes('/')) return 'Só o domínio, sem http:// nem caminho.';
+  if (!RE_DOMINIO.test(d)) return 'Domínio inválido — ex.: cursos.seudominio.com.br.';
+  if (d === base || d.endsWith(`.${base}`)) return 'Esse endereço já é do nosso domínio — o seu portal já responde nele.';
+  return null;
 }
 
 /** Cookie que carrega o token da indicação do clique até o cadastro (§5.10.1). */

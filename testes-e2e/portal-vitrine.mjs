@@ -84,6 +84,9 @@ try {
   await p.waitForURL('**/painel*', { timeout: 20000 });
 
   await p.goto(`${base}/parceiros/jackson/materia/${mat.slug}`, { waitUntil: 'load' });
+  check(await p.locator('aside form input[name=cpf]').count() === 1,
+    'aluna nova ainda não tem CPF: a compra pede');
+  await p.fill('aside form input[name=cpf]', '529.982.247-25');
   await p.click('aside form button[type=submit]');
   await p.waitForURL('**/checkout/**', { timeout: 20000 });
   const referencia = p.url().split('/').pop();
@@ -120,6 +123,30 @@ try {
   const r = await anon.goto(`${base}/parceiros/jackson/materia/${mat.slug}`, { waitUntil: 'load' });
   check(r.status() === 404, 'visitante não vê curso retirado da vitrine');
   await anon.context().close();
+
+  // ---------- apuração da comissão (§5.6.1), pelo admin ----------
+  const adm = await (await b.newContext()).newPage();
+  await adm.goto(base + '/entrar', { waitUntil: 'load' });
+  await adm.fill('input[name=email]', 'admin@aprimoreosaber.com.br');
+  await adm.fill('input[name=senha]', process.env.SENHA_ADMIN ?? '');
+  await adm.click('form.formulario button[type=submit]');
+  await adm.waitForURL('**/painel*', { timeout: 20000 }).catch(() => {});
+  if (process.env.SENHA_ADMIN) {
+    await adm.goto(`${base}/admin/portais/${jackson.id}/financeiro`, { waitUntil: 'load' });
+    const mesAtual = new Date().toISOString().slice(0, 7);
+    await adm.fill('#apurar input[name=mes]', mesAtual);
+    await adm.click('#apurar button[type=submit]');
+    await adm.waitForSelector('.alerta-ok:has-text("Competência apurada")', { timeout: 15000 });
+    const { rows: [ap] } = await pool.query(
+      `SELECT status, centavos_comissao AS c FROM apuracao WHERE portal_id = $1 AND competencia = $2`,
+      [jackson.id, mesAtual + '-01']);
+    check(ap && Number(ap.c) === 1245 && ap.status === 'ACUMULADA',
+      `comissão apurada: R$ 12,45 (50% de R$ 24,90), abaixo do mínimo → acumula`);
+    await pool.query(`DELETE FROM apuracao WHERE portal_id = $1`, [jackson.id]);
+  } else {
+    console.log('· (SENHA_ADMIN ausente: apuração pelo admin não verificada)');
+  }
+  await adm.context().close();
 
   // O portal do jackson segue inalterado.
   await p.goto(`http://jackson.localhost:${porta}/materia/${mat.slug}`, { waitUntil: 'load' });

@@ -1,7 +1,8 @@
 import { cache } from 'react';
 import { headers } from 'next/headers';
 import { queryOne } from './db.ts';
-import { CABECALHO_PORTAL, PLATAFORMA, type Portal } from './portal.ts';
+import { CABECALHO_PORTAL, CABECALHO_DOMINIO, PLATAFORMA, type Portal } from './portal.ts';
+import { buscarPortalPorDominio } from './portal-dominio.ts';
 
 /** Consultas de portal (§5.10). Só servidor — importa `pg`. */
 
@@ -22,6 +23,7 @@ export function buscarPortalPorMascara(mascara: string) {
   );
 }
 
+
 /**
  * O portal desta requisição. `cache` do React garante uma consulta só,
  * ainda que layout, página e ações perguntem em separado.
@@ -31,9 +33,12 @@ export function buscarPortalPorMascara(mascara: string) {
  * digitou errado chega ao site principal em vez de a uma tela de falha.
  */
 export const portalAtual = cache(async (): Promise<Portal> => {
-  const mascara = (await headers()).get(CABECALHO_PORTAL);
-  if (!mascara) return PLATAFORMA;
-  return (await buscarPortalPorMascara(mascara)) ?? PLATAFORMA;
+  const h = await headers();
+  const mascara = h.get(CABECALHO_PORTAL);
+  if (mascara) return (await buscarPortalPorMascara(mascara)) ?? PLATAFORMA;
+  const dominio = h.get(CABECALHO_DOMINIO);
+  if (dominio) return (await buscarPortalPorDominio(dominio)) ?? PLATAFORMA;
+  return PLATAFORMA;
 });
 
 /** Atalho para as consultas: só o identificador, que é o que elas usam. */

@@ -24,6 +24,8 @@ let n = 300;
 const dados = () => ({
   nome: 'Prof. Indicação', email: `teste-indic-${++n}@exemplo.com`,
   senha: 'senha-bem-longa', cnpj: '11.222.333/0001-81',
+  telefone: '(11) 98765-4321', rendaMensalCentavos: 800000,
+  endereco: { cep: '01310-100', logradouro: 'Av. Paulista', numero: '1000', bairro: 'Bela Vista' },
   mascara: `teste-indic-${n}`, nomeExibicao: 'Portal Indicação',
   meio: 'PIX' as const, aceitouContrato: true, ip: '203.0.113.11',
 });

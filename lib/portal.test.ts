@@ -2,7 +2,60 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   mascaraDoHost, validarCnpj, calcularExcedente, competenciaDe, competenciaAnterior, GB,
+  validarCpf, validarTelefone, validarCep, conferirEndereco, normalizarEndereco,
+  dominioProprioDoHost, conferirDominio,
 } from './portal.ts';
+
+// ---------- Domínio próprio (Fase 2) ----------
+
+test('domínio próprio: só o que não é nosso e parece um domínio', () => {
+  const base = 'aprimoreosaber.com.br';
+  assert.equal(dominioProprioDoHost('cursos.profana.com.br', base), 'cursos.profana.com.br');
+  assert.equal(dominioProprioDoHost('Cursos.ProfAna.com.br:443', base), 'cursos.profana.com.br');
+  assert.equal(dominioProprioDoHost('aprimoreosaber.com.br', base), null, 'a plataforma');
+  assert.equal(dominioProprioDoHost('jackson.aprimoreosaber.com.br', base), null, 'subdomínio nosso é máscara');
+  assert.equal(dominioProprioDoHost('localhost:3000', base), null);
+  assert.equal(dominioProprioDoHost('127.0.0.1', base), null);
+  assert.equal(dominioProprioDoHost(null, base), null);
+});
+
+test('conferirDominio: fala o que está errado', () => {
+  const base = 'aprimoreosaber.com.br';
+  assert.equal(conferirDominio(' Cursos.ProfAna.com.br ', base), null);
+  assert.match(conferirDominio('https://profana.com.br', base) ?? '', /http/);
+  assert.match(conferirDominio('profana', base) ?? '', /inválido/);
+  assert.match(conferirDominio('ana.aprimoreosaber.com.br', base) ?? '', /nosso domínio/);
+  assert.match(conferirDominio('', base) ?? '', /Informe/);
+});
+
+// ---------- CPF do aluno e KYC do professor (§8.2, §12.1) ----------
+
+test('CPF: dígitos verificadores, com ou sem pontuação', () => {
+  assert.equal(validarCpf('529.982.247-25'), true);
+  assert.equal(validarCpf('52998224725'), true);
+  assert.equal(validarCpf('529.982.247-26'), false, 'segundo dígito errado');
+  assert.equal(validarCpf('111.111.111-11'), false, 'sequência repetida');
+  assert.equal(validarCpf('123'), false);
+  assert.equal(validarCpf(''), false);
+});
+
+test('telefone e CEP: só o formato que o gateway aceita', () => {
+  assert.equal(validarTelefone('(11) 98765-4321'), true);
+  assert.equal(validarTelefone('1132654321'), true);
+  assert.equal(validarTelefone('0800123456'), false, 'DDD não começa com zero');
+  assert.equal(validarTelefone('987654321'), false, 'sem DDD');
+  assert.equal(validarCep('01310-100'), true);
+  assert.equal(validarCep('1310100'), false);
+});
+
+test('endereço: o que falta é dito pelo nome, e o guardado sai normalizado', () => {
+  const ok = { cep: '01310-100', logradouro: ' Av. Paulista ', numero: '1000', bairro: 'Bela Vista', complemento: ' ' };
+  assert.equal(conferirEndereco(ok), null);
+  assert.match(conferirEndereco({ ...ok, cep: '123' }) ?? '', /CEP/);
+  assert.match(conferirEndereco({ ...ok, bairro: '' }) ?? '', /bairro/);
+  assert.deepEqual(normalizarEndereco(ok),
+    { cep: '01310100', logradouro: 'Av. Paulista', numero: '1000', bairro: 'Bela Vista' });
+});
 
 // ---------- Excedente e competência (§5.10, etapa 4) ----------
 

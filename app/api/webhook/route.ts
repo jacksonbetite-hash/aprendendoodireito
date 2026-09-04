@@ -18,7 +18,11 @@ export async function POST(req: Request) {
   const provedor = provedorAtual();
   const corpoBruto = await req.text();
 
-  const assinatura = req.headers.get('x-assinatura') ?? req.headers.get('x-signature');
+  // Cada gateway assina de um jeito: o simulado com HMAC em `x-assinatura`;
+  // o Asaas mandando o authToken do webhook em `asaas-access-token`. O
+  // provedor confere o seu; a rota só entrega o que veio.
+  const assinatura = req.headers.get('x-assinatura') ?? req.headers.get('x-signature')
+    ?? req.headers.get('asaas-access-token');
   if (!provedor.validarAssinatura(corpoBruto, assinatura)) {
     return NextResponse.json({ erro: 'assinatura inválida' }, { status: 401 });
   }

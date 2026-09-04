@@ -1,6 +1,6 @@
 import { queryOne } from './db.ts';
 import { emTransacao, auditar } from './auditoria.ts';
-import { provedorAtual, type EventoPagamento } from './pagamento.ts';
+import { provedorAtual, type EventoPagamento, type DadosSubconta } from './pagamento.ts';
 
 /**
  * Subconta do professor no gateway — etapa 2 do §5.10.2.
@@ -33,9 +33,13 @@ export async function abrirSubconta(portalId: number) {
   const portal = await queryOne<{
     id: number; situacao: string; nome: string | null;
     email: string | null; cnpj: string | null;
+    telefone: string | null; renda: number | null;
+    endereco: DadosSubconta['endereco'];
   }>(
     `SELECT id, subconta_situacao AS situacao, responsavel_nome AS nome,
-            responsavel_email AS email, responsavel_doc AS cnpj
+            responsavel_email AS email, responsavel_doc AS cnpj,
+            responsavel_telefone AS telefone, responsavel_renda_centavos AS renda,
+            responsavel_endereco AS endereco
        FROM portal WHERE id = $1 AND id <> 0`,
     [portalId],
   );
@@ -48,6 +52,7 @@ export async function abrirSubconta(portalId: number) {
   const provedor = provedorAtual();
   const sub = await provedor.criarSubconta({
     nome: portal.nome ?? '', email: portal.email, cnpj: portal.cnpj,
+    telefone: portal.telefone, rendaMensalCentavos: portal.renda, endereco: portal.endereco,
   });
 
   await emTransacao(async (exec) => {

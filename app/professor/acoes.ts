@@ -12,7 +12,35 @@ import {
   salvarQuestao, excluirQuestao,
 } from '../../lib/admin-cursos.ts';
 import { lerMateria, lerAula, lerQuestao, situacao, numero } from '../../lib/admin-cursos-form.ts';
+import { contestarApuracao, informarNota } from '../../lib/apuracao.ts';
+import { definirDominio, verificarDominio } from '../../lib/portal-dominio.ts';
 import type { EstadoAdmin } from '../admin/acoes.ts';
+
+// ---------- Apuração da comissão de vitrine (§5.6.1) ----------
+
+export async function acaoContestar(_e: EstadoAdmin, dados: FormData): Promise<EstadoAdmin> {
+  let d;
+  try { d = await dono(); } catch (err) { return { erro: (err as Error).message }; }
+  try {
+    await contestarApuracao(d.portal.id, numero(dados.get('apuracaoId')), String(dados.get('texto') ?? ''));
+  } catch (err) {
+    return { erro: (err as Error).message };
+  }
+  revalidatePath('/professor/financeiro');
+  return { ok: 'Contestação registrada. A plataforma responde e aprova em seguida.' };
+}
+
+export async function acaoInformarNota(_e: EstadoAdmin, dados: FormData): Promise<EstadoAdmin> {
+  let d;
+  try { d = await dono(); } catch (err) { return { erro: (err as Error).message }; }
+  try {
+    await informarNota(d.portal.id, numero(dados.get('apuracaoId')), String(dados.get('numero') ?? ''));
+  } catch (err) {
+    return { erro: (err as Error).message };
+  }
+  revalidatePath('/professor/financeiro');
+  return { ok: 'Nota registrada. O repasse sai depois da conferência do comprovante.' };
+}
 
 /**
  * Ações do painel do professor (§5.10). Mesmas funções de biblioteca da
@@ -57,6 +85,39 @@ export async function acaoSalvarSite(_e: EstadoAdmin, dados: FormData): Promise<
   }
   revalidarPortal(d.portal.id);
   return { ok: 'Página salva. Abra o seu portal para ver.' };
+}
+
+// ---------- Domínio próprio (Fase 2) ----------
+
+export async function acaoDefinirDominio(_e: EstadoAdmin, dados: FormData): Promise<EstadoAdmin> {
+  let d;
+  try { d = await dono(); } catch (err) { return { erro: (err as Error).message }; }
+  let dominio: string | null;
+  try {
+    dominio = await definirDominio(d.u.email, d.portal.id, String(dados.get('dominio') ?? ''));
+  } catch (err) {
+    return { erro: (err as Error).message };
+  }
+  revalidatePath('/professor/site');
+  return { ok: dominio ? `Domínio salvo. Agora aponte o CNAME e verifique.` : 'Domínio removido.' };
+}
+
+export async function acaoVerificarDominio(_e: EstadoAdmin): Promise<EstadoAdmin> {
+  let d;
+  try { d = await dono(); } catch (err) { return { erro: (err as Error).message }; }
+  let r;
+  try {
+    r = await verificarDominio(d.u.email, d.portal.id);
+  } catch (err) {
+    return { erro: (err as Error).message };
+  }
+  revalidatePath('/professor/site');
+  if (r.ok) return { ok: `${r.dominio} verificado: o seu portal já responde nele.` };
+  return {
+    erro: r.alvos.length
+      ? `O CNAME de ${r.dominio} aponta para ${r.alvos.join(', ')} — precisa apontar para ${r.esperado}.`
+      : `Ainda não há CNAME para ${r.dominio}. Confira o registro e tente de novo em alguns minutos.`,
+  };
 }
 
 export async function acaoMedirMeuConsumo() {
