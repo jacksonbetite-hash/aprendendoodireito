@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import FormAula from '../../../../admin/cursos/FormAula.tsx';
 import Exercicio from '../../../../admin/cursos/Exercicio.tsx';
+import Enviar from '../../../Enviar.tsx';
 import { acaoEditarAula, acaoStatusAula, acaoSalvarQuestao, acaoExcluirQuestao } from '../../../acoes.ts';
 import { buscarAula, listarAssuntos, exercicioDaAula } from '../../../../../lib/admin-cursos.ts';
 import { alunoAtual } from '../../../../../lib/sessao.ts';
@@ -51,6 +52,18 @@ export default async function AulaDoProfessor(
       </div>
 
       {criada && <p className="alerta alerta-ok" role="status">Aula criada. Falta o exercício, logo abaixo.</p>}
+
+      <div className="cartao">
+        <h2 className="headline-md" style={{ marginBottom: 6 }}>Vídeo da aula</h2>
+        <p className="caption suave" style={{ marginBottom: 12 }}>
+          {aula.videoProvedor && aula.videoId
+            ? <>Vídeo atual: <code>{aula.videoId}</code> ({aula.videoProvedor}). Enviar outro substitui.</>
+            : 'Esta aula ainda não tem vídeo. A página funciona sem ele (resumo e exercício), mas a aula em vídeo é o produto.'}
+        </p>
+        <Enviar tipo="video" aulaId={aula.id} rotulo="Enviar arquivo de vídeo"
+                aceita="video/mp4,video/webm,.mp4,.m4v,.webm"
+                dica="MP4 (H.264) ou WebM, até 2 GB. O arquivo fica no nosso volume e é entregue ao aluno por endereço assinado, com prazo — nunca por link público." />
+      </div>
 
       <div className="cartao">
         <h2 className="headline-md" style={{ marginBottom: 16 }}>Dados da aula</h2>

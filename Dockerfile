@@ -35,9 +35,13 @@ COPY docker-entrypoint.sh /usr/local/bin/
 # Clones feitos no Windows podem trazer CRLF: o shebang viraria "/bin/sh\r"
 # e o container morreria em "no such file or directory". Normaliza aqui.
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
- && chmod +x /usr/local/bin/docker-entrypoint.sh && chown -R nextjs:nodejs /app
+ && chmod +x /usr/local/bin/docker-entrypoint.sh && chown -R nextjs:nodejs /app \
+ && apk add --no-cache su-exec
 
-USER nextjs
+# Sem `USER nextjs` aqui, de propósito: o entrypoint sobe como root apenas
+# para preparar o volume de mídia (§10 — /midia nasce do root, e o upload
+# do painel do professor, §5.10, precisa escrever nele) e em seguida
+# larga o privilégio com su-exec. Migrações e servidor rodam como nextjs.
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD wget -qO- http://127.0.0.1:3000/api/saude >/dev/null || exit 1

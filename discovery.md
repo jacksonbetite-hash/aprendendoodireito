@@ -526,11 +526,13 @@ O custo é baixo e quase todo fixo (escrow + infra + suporte ≈ R$ 45); o víde
 - **O painel do professor** (`/professor`): visão geral (portal, conta de recebimento, acervo, alunos, contrato, próximos passos), minha página, cursos e aulas (área → curso → assunto → aula → questão, publicar/despublicar, vitrine da plataforma), alunos (com o aviso de LGPD) e financeiro (sua parte, comissão de vitrine, consumo × cota, faturas com botão de pagar, extrato). Reaproveita os formulários e a biblioteca da retaguarda; a diferença que é o coração da segurança: **o portal vem da sessão, nunca do formulário**. E2E no navegador com 17 checagens.
 - Correção de raiz encontrada pelo e2e: `editarPortal` apagava nome, CNPJ e e-mail do responsável (e o domínio próprio) ao salvar qualquer outra coisa — afetava o admin também.
 
+- **Envio de vídeo e foto pelo painel** (`/api/upload`, `app/professor/Enviar.tsx`): o arquivo flui do navegador para o volume de mídia em stream, com barra de progresso, teto por tipo (2 GB vídeo, 5 MB imagem), extensões restritas (sem SVG), nome gerado por nós com o portal no prefixo, e a aula vinculada ao vídeo (`LOCAL`) no ato — o anterior sai do disco. Fica **fora do proxy** de propósito: no Next 16 o proxy bufferiza o corpo em memória (10 MB). Achado de infraestrutura pelo caminho: o volume `/midia` nascia do root e o processo roda como `nextjs` — o entrypoint agora prepara o volume como root e larga o privilégio (`su-exec`). Foto pública em `/api/imagem/<id>`.
+
 **Ainda não feito:**
 
 - Apuração mensal e repasse da comissão de vitrine (§5.6.1): a comissão está gravada venda a venda e somada nos financeiros; o fechamento com NF e comprovante é o fluxo do §5.6.1, ainda por construir.
-- Upload de vídeo pelo professor: a aula aponta para um `video_id` do provedor; enviar o arquivo pelo painel (e medir o armazenamento no CDN) é o passo seguinte — hoje o arquivo entra pelo volume de mídia.
-- Foto de apresentação por upload (hoje é uma URL); domínio próprio (Fase 2).
+- Transcodificação/CDN (Bunny) para o vídeo do portal — hoje o arquivo enviado é servido como está, pelo nosso volume; o adaptador CDN é o `case 'BUNNY'` de `lib/video.ts`.
+- Domínio próprio (Fase 2).
 
 #### Fora do escopo deste modelo (por ora)
 

@@ -68,7 +68,14 @@ export const config = {
    * mídia servida pelo nginx e os estáticos da raiz. Poupa uma passagem
    * por requisição de imagem, que é a maioria delas.
    */
+  /**
+   * `api/upload` fica de fora por um motivo que a documentação do Next 16
+   * deixa claro: com proxy, o corpo da requisição é bufferizado em
+   * memória (10 MB por padrão). Uma aula tem centenas de megabytes e
+   * precisa fluir do socket para o disco. A rota não lê nenhum cabeçalho
+   * que o proxy escreveria — decide por sessão e posse do portal.
+   */
   matcher: [
-    '/((?!_next/static|_next/image|midia-interna|favicon.ico|icon.svg|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|mp4|webm|woff2?)$).*)',
+    '/((?!_next/static|_next/image|midia-interna|api/upload|favicon.ico|icon.svg|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|mp4|webm|woff2?)$).*)',
   ],
 };

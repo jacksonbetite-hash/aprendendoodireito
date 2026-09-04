@@ -34,6 +34,8 @@ async function webhook(obj) {
   })).json();
 }
 
+let videoEnviado = null;
+let fotoEnviada = null;
 const ctx = await b.newContext({ viewport: { width: 1400, height: 950 } });
 const p = await ctx.newPage();
 try {
@@ -74,6 +76,18 @@ try {
   await p.click('form.form-editor button[type=submit]');
   await p.waitForTimeout(1500);
   check((await p.locator('.alerta-ok').textContent() ?? '').includes('salva'), 'página personalizada salva');
+
+  // foto de apresentação, pelo painel (PNG mínimo válido: 1×1)
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  await p.setInputFiles('input[type=file][accept*="image"]', { name: 'foto.png', mimeType: 'image/png', buffer: png });
+  await p.waitForSelector('.alerta-ok:has-text("Foto enviada")', { timeout: 15000 });
+  const { rows: [fotoDb] } = await pool.query(
+    `SELECT personalizacao->>'foto' AS foto FROM portal WHERE mascara = $1`, [MASCARA]);
+  check((fotoDb.foto ?? '').startsWith('/api/imagem/p'), `foto vinculada à página (${fotoDb.foto})`);
+  const rImg = await fetch(base + fotoDb.foto);
+  check(rImg.status === 200 && rImg.headers.get('content-type') === 'image/png', 'a foto é servida como imagem pública');
+  fotoEnviada = fotoDb.foto.replace('/api/imagem/', '');
 
   // ---------- acervo: área → curso → assunto → aula → questão ----------
   await p.goto(base + '/professor/cursos', { waitUntil: 'load' });
@@ -125,6 +139,20 @@ try {
   await p.waitForTimeout(1500);
   check((await p.textContent('body')).includes('Questão criada') || (await p.textContent('body')).includes('Questão 1'), 'questão criada');
 
+  // ---------- vídeo da aula, pelo painel ----------
+  const aulaId = parseInt(p.url().split('/aula/')[1], 10);
+  await p.setInputFiles('input[type=file][accept*="video"]', {
+    name: 'aula-teste.mp4', mimeType: 'video/mp4', buffer: randomBytes(96 * 1024),
+  });
+  await p.waitForSelector('.alerta-ok:has-text("Vídeo enviado")', { timeout: 30000 });
+  const { rows: [aulaDb] } = await pool.query(
+    `SELECT video_provedor AS prov, video_id AS vid FROM aula WHERE id = $1`, [aulaId]);
+  check(aulaDb.prov === 'LOCAL' && /^p\d+-a\d+-[0-9a-f]+\.mp4$/.test(aulaDb.vid ?? ''),
+    `vídeo enviado e vinculado à aula (${aulaDb.vid})`);
+  videoEnviado = aulaDb.vid;
+  const bruto = await fetch(`${base}/api/upload?tipo=video&aulaId=${aulaId}&nome=x.exe`, { method: 'POST', body: 'x' });
+  check(bruto.status === 401, 'sem sessão, o upload é recusado');
+
   // publica a aula e o curso
   await p.click('.cabecalho-tela form button:has-text("Publicar")');
   await p.waitForTimeout(1200);
@@ -138,6 +166,7 @@ try {
   await anon.goto(PORTAL + '/', { waitUntil: 'load' });
   corpo = await anon.textContent('body');
   check(corpo.includes('Direito Penal descomplicado'), 'a home do portal mostra a chamada personalizada');
+  check(await anon.locator(`img[src="/api/imagem/${fotoEnviada}"]`).count() === 1, 'com a foto enviada na abertura');
   check(corpo.includes('Teoria do Crime') && corpo.includes('Conduta e resultado'), 'e o acervo publicado, por área e assunto');
   const rodape = await anon.locator('footer').textContent();
   const okRodape = rodape.includes('Responsável pelo conteúdo') && rodape.includes('11.222.333/0001-81');
@@ -159,6 +188,13 @@ try {
   }
   await pool.query(`DELETE FROM usuario WHERE email = $1`, [EMAIL]);
   await pool.end();
+  // Os arquivos enviados vivem no volume do container; apagar é
+  // cortesia (best effort) — sem Docker no PATH, ficam órfãos e pequenos.
+  try {
+    const { execSync } = await import('node:child_process');
+    const alvos = [videoEnviado && `/midia/video/${videoEnviado}`, fotoEnviada && `/midia/imagem/${fotoEnviada}`].filter(Boolean);
+    if (alvos.length) execSync(`docker exec aprimoreosaber-web-1 rm -f ${alvos.join(' ')}`, { stdio: 'ignore' });
+  } catch { /* sem docker por perto */ }
 }
 console.log(falhas ? `\n${falhas} verificação(ões) falharam` : '\nTodas as verificações passaram');
 process.exit(falhas ? 1 : 0);
